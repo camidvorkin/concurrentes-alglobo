@@ -1,6 +1,7 @@
 use std::error::Error;
 use std::fs::File;
 use std::io::Read;
+use std::env;
 mod flight_reservation;
 use crate::flight_reservation::FlightReservation;
 
@@ -22,7 +23,13 @@ fn read_file(filename: &str) -> Result<Vec<FlightReservation>, Box<dyn Error>> {
 fn main() {
     println!("Hello, world and d*!");
 
-    let flights = read_file("test/test.txt").unwrap();
+    let filename = match env::args().nth(1) {
+        Some(val) => val,
+        None => "test/test.txt".to_string(),
+    };
+
+
+    let flights = read_file(&filename).unwrap();
     for flight_reservation in flights {
         flight_reservation.send_to_airlane();
     }
