@@ -2,8 +2,12 @@ use std::error::Error;
 use std::fs::File;
 use std::io::Read;
 use std::env;
+
 mod flight_reservation;
+mod airline_factory;
+mod airline;
 use crate::flight_reservation::FlightReservation;
+use crate::airline_factory::AirlineFactory;
 
 fn read_file(filename: &str) -> Result<Vec<FlightReservation>, Box<dyn Error>> {
     let mut file = File::open(filename)?;
@@ -12,8 +16,7 @@ fn read_file(filename: &str) -> Result<Vec<FlightReservation>, Box<dyn Error>> {
     let mut result: Vec<FlightReservation> = Vec::new();
     for line in contents.lines() {
         let flight: Vec<String>  = line.split(",").map(|x| x.to_string()).collect();
-        // todo
-        // let (origen, destino, airline, hotel): Tuple = line.split(",").map(|x| x.to_string()).collect();
+        // let flight:(String, String, String, String) = line.split(",").map(|x| x.to_string()).collect_tuple();
         let flight_reservation = FlightReservation::new(flight[0].clone(), flight[1].clone(), flight[2].clone(), flight[3].clone() == "vuelo");
         result.push(flight_reservation);
     }
@@ -23,14 +26,20 @@ fn read_file(filename: &str) -> Result<Vec<FlightReservation>, Box<dyn Error>> {
 fn main() {
     println!("Hello, world and d*!");
 
+    // Procesar "archivo" de posibles aerolineas
+    let mut airline_factory:AirlineFactory = AirlineFactory::new();
+    airline_factory.create_airlines();
+
+    // Procesar archivo de reservas
     let filename = match env::args().nth(1) {
         Some(val) => val,
         None => "test/test.txt".to_string(),
     };
 
 
+    // TODO: Asegurar de que la aerolinea exista en el archivo de aerolineas
     let flights = read_file(&filename).unwrap();
     for flight_reservation in flights {
-        flight_reservation.send_to_airlane();
+        flight_reservation.send_to_airline(airline_factory.get(&flight_reservation.get_airline()));
     }
 }
