@@ -6,8 +6,10 @@ use std::env;
 mod flight_reservation;
 mod airline_factory;
 mod airline;
+mod hotel;
 use crate::flight_reservation::FlightReservation;
 use crate::airline_factory::AirlineFactory;
+use crate::hotel::Hotel;
 
 fn read_file(filename: &str) -> Result<Vec<FlightReservation>, Box<dyn Error>> {
     let mut file = File::open(filename)?;
@@ -26,6 +28,8 @@ fn read_file(filename: &str) -> Result<Vec<FlightReservation>, Box<dyn Error>> {
 fn main() {
     println!("Hello, world and d*!");
 
+    let hotel:Hotel = Hotel::new();
+
     // Procesar "archivo" de posibles aerolineas
     let mut airline_factory:AirlineFactory = AirlineFactory::new();
     airline_factory.create_airlines();
@@ -40,6 +44,6 @@ fn main() {
     // TODO: Asegurar de que la aerolinea exista en el archivo de aerolineas
     let flights = read_file(&filename).unwrap();
     for flight_reservation in flights {
-        flight_reservation.send_to_airline(airline_factory.get(&flight_reservation.get_airline()));
+        flight_reservation.reserve(airline_factory.get(&flight_reservation.get_airline()), hotel);
     }
 }
