@@ -1,2 +1,2 @@
-eze,jfk,AA,vuelo
-jfk,eze,LATAM,paquete
+eze,jfk,AA,flight
+jfk,eze,LATAM,package

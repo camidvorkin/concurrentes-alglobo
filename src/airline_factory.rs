@@ -8,20 +8,16 @@ pub struct AirlineFactory {
 
 impl AirlineFactory {
     pub fn new() -> AirlineFactory {
-        let mut airlines = HashMap::<String, Airline>::new();
+        let airlines = HashMap::<String, Airline>::new();
         AirlineFactory {
             airlines
         }
     }
 
-    pub fn create_airlines(&mut self) {
-        self.airlines.insert("AA".to_string(), Airline::new());
-        self.airlines.insert("UA".to_string(), Airline::new());
-        self.airlines.insert("DL".to_string(), Airline::new());
-        self.airlines.insert("AS".to_string(), Airline::new());
-        self.airlines.insert("F9".to_string(), Airline::new());
-        self.airlines.insert("B6".to_string(), Airline::new());
-        self.airlines.insert("LATAM".to_string(), Airline::new());
+    pub fn create_airlines(&mut self, airline_names: Vec<Vec<String>>) {
+        for airline in airline_names {
+            self.airlines.insert(airline[0].clone(), Airline::new(airline[1].parse::<i8>().unwrap().clone()));
+        }
     }
 
     pub fn get(&self, airline_code: &str) -> &Airline {

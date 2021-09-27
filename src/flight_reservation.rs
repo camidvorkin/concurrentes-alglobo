@@ -46,10 +46,6 @@ impl FlightReservation {
         handle.join().unwrap();
     }
 
-    fn send_to_airline(&self, airline: &Airline) {
-        
-    }
-
     fn send_to_hotel(&self, hotel: Hotel) {
         hotel.reserve();
         print!("Hotel reservation successful \n");
@@ -59,10 +55,4 @@ impl FlightReservation {
         return self.airline.clone();
     }
 
-}
-
-
-pub enum PackageType {
-    HOTEL,
-    COMPLETE,
 }
