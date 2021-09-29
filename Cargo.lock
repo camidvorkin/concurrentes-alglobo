@@ -7,6 +7,7 @@ name = "alglobo"
 version = "0.1.0"
 dependencies = [
  "rand",
+ "std-semaphore",
 ]
 
 [[package]]
@@ -77,6 +78,12 @@ checksum = "d51e9f596de227fda2ea6c84607f5558e196eeaf43c986b724ba4fb8fdf497e7"
 dependencies = [
  "rand_core",
 ]
+
+[[package]]
+name = "std-semaphore"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "33ae9eec00137a8eed469fb4148acd9fc6ac8c3f9b110f52cd34698c8b5bfa0e"
 
 [[package]]
 name = "wasi"

@@ -1,7 +1,3 @@
-use crate::airline::Airline;
-use crate::hotel::Hotel;
-use std::thread;
-use std::time::Duration;
 use std::string::ToString;
 pub struct FlightReservation {
     origin: String,
@@ -26,33 +22,16 @@ impl FlightReservation {
         }
     }
 
-    pub fn reserve(&self, airline: &Airline, hotel: Hotel) {  
-        let airline = airline.clone();
-        let airline_name = self.airline.clone();
-        
-        let handle = thread::spawn( move || {
-            loop {
-                if airline.reseve() {
-                    print!("Flight reservation successful for {}\n", airline_name);
-                    break;
-                }
-                print!("Flight reservation failed for {}\n", airline_name);
-                thread::sleep(Duration::from_millis(1000));
-            }
-        });
-        if self.hotel {
-            self.send_to_hotel(hotel);
-        }
-        handle.join().unwrap();
-    }
-
-    fn send_to_hotel(&self, hotel: Hotel) {
-        hotel.reserve();
-        print!("Hotel reservation successful \n");
-    }
-
     pub fn get_airline(&self) -> String {
         return self.airline.clone();
     }
 
+    pub fn get_hotel(&self) -> bool {
+        return self.hotel.clone();
+    }
+
+    // For logging purposes
+    pub fn get_flight_code(&self) -> String {
+        return format!("{}-{}", self.origin, self.destination);
+    }
 }
