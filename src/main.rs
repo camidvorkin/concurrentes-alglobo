@@ -10,6 +10,8 @@ use std::collections::HashMap;
 use std_semaphore::Semaphore;
 
 mod flight_reservation;
+mod statistics;
+use statistics::Statistics;
 use crate::flight_reservation::FlightReservation;
 
 const PACKAGE: &str = "package";
@@ -105,10 +107,15 @@ fn main() {
     };
     let flights = process_flights(&filename);
     let mut reservations = vec!();
+    
+    // Get actual time
+    let start_time = std::time::Instant::now();
+    let statistics = Statistics::new();
 
     for flight_reservation in flights {
+        
         let airline_rate_limit = airline_factory.get(&flight_reservation.get_airline()).unwrap().clone();
-        reservations.push(reserve(flight_reservation, airline_rate_limit));
+        reservations.push(reserve(flight_reservation, airline_rate_limit));        
     }
 
     for r in reservations {
