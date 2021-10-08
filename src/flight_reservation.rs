@@ -34,4 +34,12 @@ impl FlightReservation {
     pub fn get_flight_code(&self) -> String {
         return format!("{}-{}", self.origin, self.destination);
     }
+
+    pub fn get_origin(&self) -> String {
+        return self.origin.clone();
+    }
+
+    pub fn get_destination(&self) -> String {
+        return self.destination.clone();
+    }
 }

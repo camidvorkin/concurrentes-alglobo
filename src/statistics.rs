@@ -1,49 +1,81 @@
 
 
 use std::collections::HashMap;
+use std::sync::{Arc, RwLock};
 
 
 pub struct Statistics {
-    sum_time: f64,
-    count_flights: u64,
-    destinations: HashMap<String, i64>,
+    sum_time: Arc<RwLock<i64>>,
+    count_flights: Arc<RwLock<i64>>,
+    destinations: Arc<RwLock<HashMap<(String,String) , i64>>>,
+}
+
+// Impl clone
+impl Clone for Statistics {
+    fn clone(&self) -> Self {
+        Statistics {
+            sum_time: self.sum_time.clone(),
+            count_flights: self.count_flights.clone(),
+            destinations: self.destinations.clone(),
+        }
+    }
 }
 
 impl Statistics {
     pub fn new() -> Statistics {
         Statistics {
-            sum_time: 0.0,
-            count_flights: 0,
-            destinations: HashMap::<String, i64>::new(),
+            sum_time: Arc::new(RwLock::new(0)),
+            count_flights: Arc::new(RwLock::new(0)),
+            destinations: Arc::new(RwLock::new(HashMap::<(String, String), i64>::new())),
         }
     }
 
-    fn add_sum_time(&mut self, time: f64) {
-        self.sum_time += time;
-        self.count_flights += 1;
+    pub fn add_flight_reservation(&mut self, start_time: std::time::Instant, destination: (String, String)) {
+        {
+            // Add one flight
+            let mut count = self.count_flights.write().unwrap();
+            *count += 1;
+            print!("Acabo de terminar un flight, el contador esta en {} \n", count);
+            
+            // Sum time elapsed since flight was processed
+            let diff = start_time.elapsed().as_millis() as i64;
+            let mut sum_time = self.sum_time.write().unwrap();
+            *sum_time += diff;
+            print!("Acabo de terminar un flight, el sum esta en {} \n", sum_time);
+            
+            // Add (origin, destination)
+            let mut map = self.destinations.write().expect("RwLock poisoned");
+            *map.entry(destination).or_insert(0) += 1;
+        }
     }
 
-    fn add_destination(&mut self, flight_code: String) {
-        let flight_key = flight_code.clone();
-        self.destinations.insert(flight_key, self.destinations.get(&flight_code).unwrap_or(&0) + 1);
+    pub fn get_total_count(&self) -> i64 {
+        let count = self.count_flights.read().unwrap();
+        *count
     }
 
-    pub fn add_reservation(&mut self, flight_code: String, time: f64) {
-        self.add_sum_time(time);
-        self.add_destination(flight_code);
+    pub fn get_sum_time(&self) -> i64 {
+        let sum_time = self.sum_time.read().unwrap();
+        *sum_time
+    }
+
+    pub fn get_destinations(&self) -> HashMap<(String, String), i64> {
+        let map = self.destinations.read().unwrap();
+        map.clone()
     }
 
     pub fn get_avg_time(&self) -> f64 {
-        return self.sum_time / self.count_flights as f64;
+        let sum_time = self.sum_time.read().unwrap();
+        let count = self.count_flights.read().unwrap();
+        (*sum_time as f64) / (*count as f64)
     }
-
-    pub fn get_destinations(&self, flight_code: String) -> i64 {
-        return *self.destinations.get(&flight_code).unwrap_or(&0);
-    }
-
-    pub fn get_top_destinations(&self, n: u64) -> Vec<(&String, &i64)> {
-        let mut top_destinations: Vec<(&String, &i64)> = self.destinations.iter().collect();
+    
+    pub fn get_top_destinations(&self, n: usize) -> Vec<((String, String), i64)> {
+        let map = self.destinations.read().unwrap();
+        let mut top_destinations = map.iter()
+            .map(|(k, v)| (k.clone(), *v))
+            .collect::<Vec<((String, String), i64)>>();
         top_destinations.sort_by(|a, b| b.1.cmp(&a.1));
-        return top_destinations.into_iter().take(n as usize).collect();
+        top_destinations.into_iter().take(n).collect()
     }
 }

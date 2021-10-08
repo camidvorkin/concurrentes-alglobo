@@ -5,7 +5,7 @@ use std::env;
 use std::thread; 
 use rand::Rng;
 use std::time::Duration;
-use std::sync::{RwLock, Arc, Barrier};
+use std::sync::{Arc, Barrier};
 use std::collections::HashMap;
 use std_semaphore::Semaphore;
 
@@ -63,9 +63,11 @@ fn _send_to_airline() -> bool {
 }
 
 // Request flight
-fn reserve(flight_reservation: FlightReservation, rate_limit:Arc<Semaphore>, lock_count_flights: Arc<RwLock<i64>>, lock_sum_flights: Arc<RwLock<i64>>) -> thread::JoinHandle<()> {
+fn reserve(flight_reservation: FlightReservation, rate_limit:Arc<Semaphore>, mut statistics: Statistics) -> thread::JoinHandle<()> {
     let airline_name = flight_reservation.get_airline();
     let flight_code = flight_reservation.get_flight_code();
+    let flight_destination = flight_reservation.get_destination();
+    let flight_origin = flight_reservation.get_origin();
     let sem = rate_limit.clone();
 
     let barrier_c1 = Arc::new(Barrier::new(3));
@@ -77,14 +79,14 @@ fn reserve(flight_reservation: FlightReservation, rate_limit:Arc<Semaphore>, loc
     let start_time = std::time::Instant::now();
     
     // Send request to the airline and hotel(if was requested) simultaneously
-    let handle = thread::spawn( move || { 
+    let _handle1 = thread::spawn( move || { 
         if flight_reservation.get_hotel() {
             send_to_hotel();
         }
         barrier_c1.wait();
     });
     
-    let reservation = thread::spawn( move || {
+    let _handle2 = thread::spawn( move || {
         loop {
             if _send_to_airline() {
                 print!("Flight reservation successful for {}. For flight: {} \n", airline_name, flight_code);
@@ -99,17 +101,7 @@ fn reserve(flight_reservation: FlightReservation, rate_limit:Arc<Semaphore>, loc
 
     let handle3 = thread::spawn( move || {
         barrier_c3.wait();
-        {
-            let mut count_flights = lock_count_flights.write().unwrap();
-            *count_flights += 1;
-            print!("Acabo de terminar un flight, el contador esta en {} \n", count_flights);
-        }
-        {
-            let diff = start_time.elapsed().as_millis() as i64;
-            let mut sum_time = lock_sum_flights.write().unwrap();
-            *sum_time += diff;
-            print!("Acabo de terminar un flight, el sum esta en {} \n", sum_time);
-        }
+        statistics.add_flight_reservation(start_time, (flight_origin, flight_destination));
     });
     return handle3;
 }
@@ -130,22 +122,25 @@ fn main() {
     };
     let flights = process_flights(&filename);
     let mut reservations = vec!();
-    
-    // Get actual time
-    let mut destinations = Arc::new(HashMap::<String, i64>::new());
-    let count_flights = Arc::new(RwLock::new(0));
-    let sum_time = Arc::new(RwLock::new(0));
-    
-
+    let statistics = Statistics::new();
 
     for flight_reservation in flights {
         let airline_rate_limit = airline_factory.get(&flight_reservation.get_airline()).unwrap().clone();
-        reservations.push(reserve(flight_reservation, airline_rate_limit, count_flights.clone(), sum_time.clone()));
+        reservations.push(reserve(flight_reservation, airline_rate_limit, statistics.clone()));
     }
 
     for r in reservations {
-        r.join();
+        r.join().unwrap();
     }
-    print!("Total count {} \n", count_flights.read().unwrap());
-    print!("Total sum time {} \n", sum_time.read().unwrap());
+
+    // Print statistics
+    print!("Total count {} \n", statistics.get_total_count());
+    print!("Total sum time {} \n", statistics.get_sum_time());
+    for (key, value) in statistics.get_destinations().iter() {
+        println!("Orgin: {:?} -> Destination: {:?} -> Total count: {}", key.0, key.1, value);
+    }
+    for (k, v) in statistics.get_top_destinations(3) {
+        println!("Origin: {} -> Destination: {}. Total count: {}", k.0, k.1, v);
+    }
+    print!("Avg time: {:.2} \n", statistics.get_avg_time());
 }
