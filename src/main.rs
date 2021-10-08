@@ -5,7 +5,7 @@ use std::env;
 use std::thread; 
 use rand::Rng;
 use std::time::Duration;
-use std::sync::Arc;
+use std::sync::{RwLock, Arc, Barrier};
 use std::collections::HashMap;
 use std_semaphore::Semaphore;
 
@@ -58,37 +58,60 @@ fn send_to_hotel() -> () {
 // Request to airline. Returns true if request was accepted, false otherwise
 fn _send_to_airline() -> bool {
     thread::sleep(Duration::from_secs(1));
-    let rng = rand::thread_rng().gen_bool(0.5);
+    let rng = rand::thread_rng().gen_bool(0.8);
     return rng;
 }
 
 // Request flight
-fn reserve(flight_reservation: FlightReservation, rate_limit:Arc<Semaphore>) -> thread::JoinHandle<()> {
+fn reserve(flight_reservation: FlightReservation, rate_limit:Arc<Semaphore>, lock_count_flights: Arc<RwLock<i64>>, lock_sum_flights: Arc<RwLock<i64>>) -> thread::JoinHandle<()> {
     let airline_name = flight_reservation.get_airline();
     let flight_code = flight_reservation.get_flight_code();
     let sem = rate_limit.clone();
+
+    let barrier_c1 = Arc::new(Barrier::new(3));
+    let barrier_c2 = barrier_c1.clone();
+    let barrier_c3 = barrier_c1.clone();
+
+    sem.acquire();
+
+    let start_time = std::time::Instant::now();
     
     // Send request to the airline and hotel(if was requested) simultaneously
     let handle = thread::spawn( move || { 
         if flight_reservation.get_hotel() {
             send_to_hotel();
         }
+        barrier_c1.wait();
     });
     
-    sem.acquire();
     let reservation = thread::spawn( move || {
         loop {
             if _send_to_airline() {
                 print!("Flight reservation successful for {}. For flight: {} \n", airline_name, flight_code);
                 sem.release();
+                barrier_c2.wait();
                 break;
             }
             print!("Flight reservation failed for {}. For flight: {} \n", airline_name, flight_code);
             thread::sleep(Duration::from_millis(5000));
         }
     });
-    handle.join().unwrap();
-    return reservation;
+
+    let handle3 = thread::spawn( move || {
+        barrier_c3.wait();
+        {
+            let mut count_flights = lock_count_flights.write().unwrap();
+            *count_flights += 1;
+            print!("Acabo de terminar un flight, el contador esta en {} \n", count_flights);
+        }
+        {
+            let diff = start_time.elapsed().as_millis() as i64;
+            let mut sum_time = lock_sum_flights.write().unwrap();
+            *sum_time += diff;
+            print!("Acabo de terminar un flight, el sum esta en {} \n", sum_time);
+        }
+    });
+    return handle3;
 }
 
 fn main() {
@@ -109,16 +132,20 @@ fn main() {
     let mut reservations = vec!();
     
     // Get actual time
-    let start_time = std::time::Instant::now();
-    let statistics = Statistics::new();
+    let mut destinations = Arc::new(HashMap::<String, i64>::new());
+    let count_flights = Arc::new(RwLock::new(0));
+    let sum_time = Arc::new(RwLock::new(0));
+    
+
 
     for flight_reservation in flights {
-        
         let airline_rate_limit = airline_factory.get(&flight_reservation.get_airline()).unwrap().clone();
-        reservations.push(reserve(flight_reservation, airline_rate_limit));        
+        reservations.push(reserve(flight_reservation, airline_rate_limit, count_flights.clone(), sum_time.clone()));
     }
 
     for r in reservations {
         r.join();
     }
+    print!("Total count {} \n", count_flights.read().unwrap());
+    print!("Total sum time {} \n", sum_time.read().unwrap());
 }
