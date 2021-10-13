@@ -1,11 +1,17 @@
 # Trabajo Práctico: AlGlobo
 
-Toda la documentación que estas buscando, se encuentra en...
+Sencillo server HTTP para reservar vuelos, procesandolos concurrentemente.
 
-El informe en...
+// TODO: Mini videito de un curl pegandole al servidor
 
-Para correr:
+Toda la documentación que estas buscando, se encuentra en nuestro [rustdoc](https://camidvorkin.github.io/concurrentes-alglobo)
 
-Para generar la documentacion:
+Si no tenes ganas de leer el informe dentro de rustdoc, lo podes encontrar en un [PDF lindo](TODO)
 
-Para una documentacion un poco mas prolija (pdf)
+## Un par de comandos
+
+Para generar la documentacion: `cargo doc --no-deps --target-dir docs`
+
+Para generar el PDF lindo: `TODO`
+
+El resto de los comandos, en el rustdoc.

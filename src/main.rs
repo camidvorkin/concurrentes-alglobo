@@ -1,30 +1,37 @@
+//! AlGlobo - Simple HTTP server for reserving a flight
+//! ---
+//! This server receives POST calls from the client and attempts to make a reservation to the corresponding airline
+//!
+//! Start the server with `cargo run` or even `cargo run airlines.txt` to specify the airlines file
+//! TODO
 use std::{collections::HashMap, env};
 mod flight_reservation;
 mod statistics;
 mod utils;
 mod alglobo;
+mod informe;
 use actix_web::{web, App, HttpRequest, HttpResponse, HttpServer, Responder, post};
 use statistics::Statistics;
 use utils::Airlines;
 
 use crate::flight_reservation::FlightReservation;
 
+/// TODO
 struct AppState {
+    /// TODO
     airlines: Airlines,
+    /// TODO
     statistics: Statistics,
 }
 
-
+/// TODO
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    // Process airlines
+    // The Airlines config file is either a CLA or hardcoded in our configs directory
     let filename_airline = match env::args().nth(1) {
         Some(val) => val,
         None => utils::AIRLINES_FILE.to_string(),
     };
-    let airlines = utils::process_airlines(&filename_airline);
-
-    let statistics = Statistics::new();
 
     // Print statistics
     // print!("Total count {} \n", statistics.get_total_count());
@@ -40,8 +47,8 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         App::new()
             .data(AppState {
-                airlines: airlines.to_owned(),
-                statistics: statistics.to_owned()
+                airlines: utils::process_airlines(&filename_airline),
+                statistics: Statistics::new(),
             })
             .service(reservation)
     })
@@ -50,6 +57,7 @@ async fn main() -> std::io::Result<()> {
     .await
 }
 
+/// TODO
 #[post("/")]
 fn reservation(req: web::Json<FlightReservation>, appstate: web::Data<AppState>) -> HttpResponse {
     // No se encuentra algun aeropuerto -> not acceptable

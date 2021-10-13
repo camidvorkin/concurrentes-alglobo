@@ -1,4 +1,7 @@
 //! Informe
 //! ---
-//! En este trabajo practico...
+//! [Leer en PDF](http://...)
+//!
+//! [Leer en HTML](http://...)
+//!
 //!
