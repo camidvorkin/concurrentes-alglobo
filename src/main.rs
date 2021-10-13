@@ -15,8 +15,13 @@ use airlines::Airlines;
 use actix_web::{web, App, HttpRequest, HttpResponse, HttpServer, Responder, post};
 use statistics::Statistics;
 use crate::flight_reservation::FlightReservation;
+use std::{io, thread};
+use std::io::prelude::*;
+
 
 const AIRLINES_FILE: &str = "src/configs/airlines.txt";
+const QUIT_COMMANDS: [&'static str; 2] = ["Q", "QUIT"];
+const STAT_COMMANDS: [&'static str; 2] = ["S", "STATS"];
 
 /// TODO
 struct AppState {
@@ -29,6 +34,31 @@ struct AppState {
 /// TODO
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+
+    println!("At any time press S to query for stats or Q to gracefully exit");
+
+    thread::spawn( move || {
+        let stdin = io::stdin();
+        loop {
+            for line in stdin.lock().lines() {
+                match line {
+                    Ok(line) => {
+                        let input = &*line.trim().to_uppercase();
+                        if QUIT_COMMANDS.contains(&input) {
+                            println!("quit")
+                        }
+                        else if STAT_COMMANDS.contains(&input) {
+                            println!("stats")
+                        }
+                    },
+                    Err(_) => panic!("Failed to read stdin")
+                    }
+                };
+            }
+    });
+
+
+
     // The Airlines config file is either a CLA or hardcoded in our configs directory
     let filename_airline = match env::args().nth(1) {
         Some(val) => val,
