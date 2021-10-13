@@ -1,9 +1,0 @@
-1,11,AA,flight
-1,11,AA,flight
-3,33,AA,flight
-4,44,AA,flight
-1,11,AA,flight
-6,66,AA,flight
-7,77,AA,flight
-8,88,AA,flight
-jfk,eze,LATAM,package

@@ -1,9 +1,12 @@
 use std::string::ToString;
+use serde::Deserialize;
+
+#[derive(Deserialize)]
 pub struct FlightReservation {
-    origin: String,
-    destination: String,
-    airline: String,
-    hotel: bool,
+    pub origin: String,
+    pub destination: String,
+    pub airline: String,
+    pub hotel: bool,
 }
 
 impl ToString for FlightReservation {
