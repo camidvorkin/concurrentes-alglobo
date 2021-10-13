@@ -7,7 +7,7 @@ use std::sync::{Arc, RwLock};
 pub struct Statistics {
     sum_time: Arc<RwLock<i64>>,
     count_flights: Arc<RwLock<i64>>,
-    destinations: Arc<RwLock<HashMap<(String,String) , i64>>>,
+    destinations: Arc<RwLock<HashMap<String , i64>>>,
 }
 
 // Impl clone
@@ -26,22 +26,22 @@ impl Statistics {
         Statistics {
             sum_time: Arc::new(RwLock::new(0)),
             count_flights: Arc::new(RwLock::new(0)),
-            destinations: Arc::new(RwLock::new(HashMap::<(String, String), i64>::new())),
+            destinations: Arc::new(RwLock::new(HashMap::<String, i64>::new())),
         }
     }
 
-    pub fn add_flight_reservation(&mut self, start_time: std::time::Instant, destination: (String, String)) {
+    pub fn add_flight_reservation(&mut self, start_time: std::time::Instant, destination: String) {
         {
             // Add one flight
             let mut count = self.count_flights.write().unwrap();
             *count += 1;
-            print!("Acabo de terminar un flight, el contador esta en {} \n", count);
+            print!("So far {} flights were completed \n", count);
             
             // Sum time elapsed since flight was processed
             let diff = start_time.elapsed().as_millis() as i64;
             let mut sum_time = self.sum_time.write().unwrap();
             *sum_time += diff;
-            print!("Acabo de terminar un flight, el sum esta en {} \n", sum_time);
+            print!("The total amount of waiting time is {} millis\n", sum_time);
             
             // Add (origin, destination)
             let mut map = self.destinations.write().expect("RwLock poisoned");
@@ -59,7 +59,7 @@ impl Statistics {
         *sum_time
     }
 
-    pub fn get_destinations(&self) -> HashMap<(String, String), i64> {
+    pub fn get_destinations(&self) -> HashMap<String, i64> {
         let map = self.destinations.read().unwrap();
         map.clone()
     }
@@ -70,11 +70,11 @@ impl Statistics {
         (*sum_time as f64) / (*count as f64)
     }
     
-    pub fn get_top_destinations(&self, n: usize) -> Vec<((String, String), i64)> {
+    pub fn get_top_destinations(&self, n: usize) -> Vec<(String, i64)> {
         let map = self.destinations.read().unwrap();
         let mut top_destinations = map.iter()
             .map(|(k, v)| (k.clone(), *v))
-            .collect::<Vec<((String, String), i64)>>();
+            .collect::<Vec<(String, i64)>>();
         top_destinations.sort_by(|a, b| b.1.cmp(&a.1));
         top_destinations.into_iter().take(n).collect()
     }

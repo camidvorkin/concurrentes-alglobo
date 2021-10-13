@@ -12,6 +12,17 @@ impl ToString for FlightReservation {
     }
 }
 
+impl Clone for FlightReservation {
+    fn clone(&self) -> Self {
+        return FlightReservation {
+            origin: self.origin.clone(),
+            destination: self.destination.clone(),
+            airline: self.airline.clone(),
+            hotel: self.hotel,
+        };
+    }
+}
+
 impl FlightReservation {
     pub fn new(origin: String, destination: String, airline: String, hotel: bool) -> FlightReservation {
         FlightReservation {
@@ -35,11 +46,7 @@ impl FlightReservation {
         return format!("{}-{}", self.origin, self.destination);
     }
 
-    pub fn get_origin(&self) -> String {
-        return self.origin.clone();
-    }
-
-    pub fn get_destination(&self) -> String {
-        return self.destination.clone();
+    pub fn get_path(&self) -> String {
+        return format!("Origin: {} -> Destination: {}", self.origin, self.destination);
     }
 }
