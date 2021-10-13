@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["alglobo"] = [{"text":"impl HttpServiceFactory for <a class=\"struct\" href=\"alglobo/struct.reservation.html\" title=\"struct alglobo::reservation\">reservation</a>","synthetic":false,"types":["alglobo::reservation"]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
