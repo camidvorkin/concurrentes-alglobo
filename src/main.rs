@@ -10,11 +10,13 @@ mod statistics;
 mod utils;
 mod alglobo;
 mod informe;
+mod airlines;
+use airlines::Airlines;
 use actix_web::{web, App, HttpRequest, HttpResponse, HttpServer, Responder, post};
 use statistics::Statistics;
-use utils::Airlines;
-
 use crate::flight_reservation::FlightReservation;
+
+const AIRLINES_FILE: &str = "src/configs/airlines.txt";
 
 /// TODO
 struct AppState {
@@ -30,7 +32,7 @@ async fn main() -> std::io::Result<()> {
     // The Airlines config file is either a CLA or hardcoded in our configs directory
     let filename_airline = match env::args().nth(1) {
         Some(val) => val,
-        None => utils::AIRLINES_FILE.to_string(),
+        None => AIRLINES_FILE.to_string(),
     };
 
     // Print statistics
@@ -47,7 +49,7 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         App::new()
             .data(AppState {
-                airlines: utils::process_airlines(&filename_airline),
+                airlines: airlines::from_file(&filename_airline),
                 statistics: Statistics::new(),
             })
             .service(reservation)
