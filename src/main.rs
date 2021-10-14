@@ -35,9 +35,13 @@ struct AppState {
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
 
+    let statistics = Statistics::new();
+    let statistics_keyboard = statistics.clone();
+    let statistics_webserver = statistics.clone();
+
     println!("At any time press S to query for stats or Q to gracefully exit");
 
-    thread::spawn( move || {
+    thread::spawn(move || {
         let stdin = io::stdin();
         loop {
             for line in stdin.lock().lines() {
@@ -48,7 +52,8 @@ async fn main() -> std::io::Result<()> {
                             println!("quit")
                         }
                         else if STAT_COMMANDS.contains(&input) {
-                            println!("stats")
+                            let x = statistics_keyboard.to_owned().get_total_count();
+                            println!("Total number of reservations: {}", x);
                         }
                     },
                     Err(_) => panic!("Failed to read stdin")
@@ -80,7 +85,7 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .data(AppState {
                 airlines: airlines::from_file(&filename_airline),
-                statistics: Statistics::new(),
+                statistics: statistics_webserver.to_owned(),
             })
             .service(reservation)
     })
