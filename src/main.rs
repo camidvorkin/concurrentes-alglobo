@@ -98,10 +98,13 @@ async fn main() -> std::io::Result<()> {
 /// TODO
 #[post("/")]
 fn reservation(req: web::Json<FlightReservation>, appstate: web::Data<AppState>) -> HttpResponse {
-    // No se encuentra algun aeropuerto -> not acceptable
-    // Mal formato -> 400
-    // Cualquier otra cosa -> Success! y manejamos los errores desde el json de retorno
-
+    let semaphore = appstate.airlines.get(&req.airline);
+    match semaphore {
+        None => {
+            return HttpResponse::NotAcceptable().body("Airline not present on server configuration");
+        },
+        Some(_) => (),
+    };
 
     let flight: FlightReservation = FlightReservation {
         origin: req.origin.clone(),
@@ -110,9 +113,8 @@ fn reservation(req: web::Json<FlightReservation>, appstate: web::Data<AppState>)
         hotel: req.hotel.clone(),
     };
 
-    let reservation = alglobo::reserve(flight, appstate.airlines.get(&req.airline).unwrap().clone(), appstate.statistics.clone());
+    let reservation = alglobo::reserve(flight, semaphore.unwrap().clone(), appstate.statistics.clone());
 
     reservation.join().unwrap();
-
-    HttpResponse::Ok().body("a")
+    HttpResponse::Ok().finish()
 }
