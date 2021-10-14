@@ -31,44 +31,45 @@ struct AppState {
     statistics: Statistics,
 }
 
+fn keyboard_listener(statistics_keyboard: Statistics) {
+    println!("At any time press S to query for stats or Q to gracefully exit");
+    let stdin = io::stdin();
+    for line in stdin.lock().lines() {
+        match line {
+            Ok(line) => {
+                let input = &*line.trim().to_uppercase();
+                if QUIT_COMMANDS.contains(&input) {
+                    // TODO: como puedo matar a un thread desde si mismo? o mandar una señal a main para que lo mate
+                    println!("quit");
+                    break;
+                }
+                else if STAT_COMMANDS.contains(&input) {
+                    let x = statistics_keyboard.to_owned().get_total_count();
+                    println!("Total number of reservations: {}", x);
+                }
+            },
+            Err(_) => panic!("Failed to read stdin")
+        }
+    };
+}
+
 /// TODO
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-
-    let statistics = Statistics::new();
-    let statistics_keyboard = statistics.clone();
-    let statistics_webserver = statistics.clone();
-
-    println!("At any time press S to query for stats or Q to gracefully exit");
-
-    thread::spawn(move || {
-        let stdin = io::stdin();
-        loop {
-            for line in stdin.lock().lines() {
-                match line {
-                    Ok(line) => {
-                        let input = &*line.trim().to_uppercase();
-                        if QUIT_COMMANDS.contains(&input) {
-                            println!("quit")
-                        }
-                        else if STAT_COMMANDS.contains(&input) {
-                            let x = statistics_keyboard.to_owned().get_total_count();
-                            println!("Total number of reservations: {}", x);
-                        }
-                    },
-                    Err(_) => panic!("Failed to read stdin")
-                    }
-                };
-            }
-    });
-
-
-
     // The Airlines config file is either a CLA or hardcoded in our configs directory
     let filename_airline = match env::args().nth(1) {
         Some(val) => val,
         None => AIRLINES_FILE.to_string(),
     };
+
+    let statistics = Statistics::new();
+    let statistics_keyboard = statistics.clone();
+    let statistics_webserver = statistics.clone();
+
+    thread::spawn(move || {
+        keyboard_listener(statistics_keyboard);
+    });
+
 
     // Print statistics
     // print!("Total count {} \n", statistics.get_total_count());
