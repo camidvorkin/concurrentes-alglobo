@@ -1,4 +1,5 @@
 
+use std::env;
 use std::thread;
 use rand::Rng;
 use std::time::Duration;
@@ -30,6 +31,11 @@ fn _send_to_airline() -> bool {
 }
 
 fn send_to_airline(flight_info: FlightReservation, sem: Arc<Semaphore>, barrier: Arc<Barrier>) -> () {
+    let retry_seconds = match env::var("RETRY_SECONDS") {
+        Ok(val) => val.parse::<u64>().unwrap(),
+        Err(_) => 5000,
+    };
+
     loop {
         if _send_to_airline() {
             print!("Flight reservation successful for {}. For flight: {} \n", flight_info.airline, flight_info.get_flight_code());
@@ -39,7 +45,7 @@ fn send_to_airline(flight_info: FlightReservation, sem: Arc<Semaphore>, barrier:
         }
         print!("Flight reservation failed for {}. For flight: {} \n", flight_info.airline, flight_info.get_flight_code());
         // thread::sleep(Duration::from_millis(thread_rng().gen_range(0, 5000)));
-        thread::sleep(Duration::from_millis(5000));
+        thread::sleep(Duration::from_millis(retry_seconds));
     }
 }
 
