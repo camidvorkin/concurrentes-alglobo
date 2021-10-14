@@ -44,7 +44,7 @@ fn keyboard_listener(statistics: Statistics) {
                     break;
                 }
                 else if STAT_COMMANDS.contains(&input) {
-                    println!("Operational Stats\n\
+                    println!("Operational Stats \n\
                               * Completed Flights: {} \n\
                               * Total Waiting Time: {} \n\
                               * Avg Response time: {:.2}", statistics.get_total_count(),
@@ -109,6 +109,7 @@ fn reservation(req: web::Json<FlightReservation>, appstate: web::Data<AppState>)
     };
 
     let flight: FlightReservation = req.clone();
+    println!("New Request! {}", flight.to_string());
     let reservation = alglobo::reserve(flight,
                                        semaphore.unwrap().clone(),
                                        appstate.statistics.clone());

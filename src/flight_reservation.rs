@@ -11,7 +11,9 @@ pub struct FlightReservation {
 
 impl ToString for FlightReservation {
     fn to_string(&self) -> String {
-        format!("FlightReservation: origin: {}, destination: {}, airline: {}, hotel: {}", self.origin, self.destination, self.airline, self.hotel)
+        let mut string = format!("{} by {}", self.get_route(), self.airline);
+        if self.hotel { string += " (hotel)"} ;
+        string
     }
 }
 
@@ -27,12 +29,7 @@ impl Clone for FlightReservation {
 }
 
 impl FlightReservation {
-    // For logging purposes
-    pub fn get_flight_code(&self) -> String {
-        format!("{}-{}", self.origin, self.destination)
-    }
-
-    pub fn get_path(&self) -> String {
+    pub fn get_route(&self) -> String {
         format!("{} -> {}", self.origin, self.destination)
     }
 }
