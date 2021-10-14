@@ -36,13 +36,13 @@ impl Statistics {
             let mut count = self.count_flights.write().unwrap();
             *count += 1;
             print!("So far {} flights were completed \n", count);
-            
+
             // Sum time elapsed since flight was processed
             let diff = start_time.elapsed().as_millis() as i64;
             let mut sum_time = self.sum_time.write().unwrap();
             *sum_time += diff;
             print!("The total amount of waiting time is {} millis\n", sum_time);
-            
+
             // Add (origin, destination)
             let mut map = self.destinations.write().expect("RwLock poisoned");
             *map.entry(destination).or_insert(0) += 1;
@@ -69,7 +69,7 @@ impl Statistics {
         let count = self.count_flights.read().unwrap();
         (*sum_time as f64) / (*count as f64)
     }
-    
+
     pub fn get_top_destinations(&self, n: usize) -> Vec<(String, i64)> {
         let map = self.destinations.read().unwrap();
         let mut top_destinations = map.iter()

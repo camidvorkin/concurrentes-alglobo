@@ -11,5 +11,5 @@ pub fn from_file(filename: &str) -> Airlines {
     for airline in airlines {
         airline_map.insert(airline[0].clone(), Arc::new(Semaphore::new(airline[1].parse::<isize>().unwrap())));
     }
-    return airline_map;
+    airline_map
 }

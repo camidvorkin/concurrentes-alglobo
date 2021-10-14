@@ -4,7 +4,7 @@
 //!
 //! Start the server with `cargo run` or even `cargo run airlines.txt` to specify the airlines file
 //! TODO
-use std::{collections::HashMap, env};
+use std::env;
 mod flight_reservation;
 mod statistics;
 mod utils;
@@ -12,12 +12,11 @@ mod alglobo;
 mod informe;
 mod airlines;
 use airlines::Airlines;
-use actix_web::{web, App, HttpRequest, HttpResponse, HttpServer, Responder, post};
+use actix_web::{web, App, HttpResponse, HttpServer, post};
 use statistics::Statistics;
 use crate::flight_reservation::FlightReservation;
 use std::{io, thread};
 use std::io::prelude::*;
-
 
 const AIRLINES_FILE: &str = "src/configs/airlines.txt";
 const QUIT_COMMANDS: [&'static str; 2] = ["Q", "QUIT"];
@@ -39,12 +38,13 @@ fn keyboard_listener(statistics_keyboard: Statistics) {
             Ok(line) => {
                 let input = &*line.trim().to_uppercase();
                 if QUIT_COMMANDS.contains(&input) {
-                    // TODO: como puedo matar a un thread desde si mismo? o mandar una señal a main para que lo mate
+                    // TODO: como puedo matar a un thread desde si mismo?
+                    // o mandar una señal a main para que lo mate
                     println!("quit");
                     break;
                 }
                 else if STAT_COMMANDS.contains(&input) {
-                    let x = statistics_keyboard.to_owned().get_total_count();
+                    let x = statistics_keyboard.get_total_count();
                     println!("Total number of reservations: {}", x);
                 }
             },
@@ -67,7 +67,7 @@ async fn main() -> std::io::Result<()> {
     let statistics_webserver = statistics.clone();
 
     thread::spawn(move || {
-        keyboard_listener(statistics_keyboard);
+        keyboard_listener(statistics_keyboard.to_owned());
     });
 
 
@@ -89,10 +89,9 @@ async fn main() -> std::io::Result<()> {
                 statistics: statistics_webserver.to_owned(),
             })
             .service(reservation)
-    })
-    .bind(("127.0.0.1", 8080))?
-    .run()
-    .await
+    }).bind(("127.0.0.1", 8080))?
+      .run()
+      .await
 }
 
 /// TODO
@@ -106,15 +105,10 @@ fn reservation(req: web::Json<FlightReservation>, appstate: web::Data<AppState>)
         Some(_) => (),
     };
 
-    let flight: FlightReservation = FlightReservation {
-        origin: req.origin.clone(),
-        destination: req.destination.clone(),
-        airline: req.airline.clone(),
-        hotel: req.hotel.clone(),
-    };
-
-    let reservation = alglobo::reserve(flight, semaphore.unwrap().clone(), appstate.statistics.clone());
-
+    let flight: FlightReservation = req.clone();
+    let reservation = alglobo::reserve(flight,
+                                       semaphore.unwrap().clone(),
+                                       appstate.statistics.clone());
     reservation.join().unwrap();
     HttpResponse::Ok().finish()
 }

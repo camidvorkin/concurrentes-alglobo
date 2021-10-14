@@ -1,5 +1,5 @@
 
-use std::thread; 
+use std::thread;
 use rand::Rng;
 use std::time::Duration;
 use crate::flight_reservation::FlightReservation;
@@ -26,18 +26,18 @@ fn _send_to_airline() -> bool {
     // thread::sleep(Duration::from_millis(thread_rng().gen_range(1000, 10000)));
     thread::sleep(Duration::from_secs(1));
     let rng = rand::thread_rng().gen_bool(0.8);
-    return rng;
+    rng
 }
 
 fn send_to_airline(flight_info: FlightReservation, sem: Arc<Semaphore>, barrier: Arc<Barrier>) -> () {
     loop {
         if _send_to_airline() {
-            print!("Flight reservation successful for {}. For flight: {} \n", flight_info.get_airline(), flight_info.get_flight_code());
+            print!("Flight reservation successful for {}. For flight: {} \n", flight_info.airline, flight_info.get_flight_code());
             sem.release();
             barrier.wait();
             break;
         }
-        print!("Flight reservation failed for {}. For flight: {} \n", flight_info.get_airline(), flight_info.get_flight_code());
+        print!("Flight reservation failed for {}. For flight: {} \n", flight_info.airline, flight_info.get_flight_code());
         // thread::sleep(Duration::from_millis(thread_rng().gen_range(0, 5000)));
         thread::sleep(Duration::from_millis(5000));
     }
@@ -51,21 +51,27 @@ fn end_transaction(mut statistics: Statistics, barrier: Arc<Barrier>, start_time
 // Request flight
 pub fn reserve(flight_reservation: FlightReservation, rate_limit:Arc<Semaphore>, statistics: Statistics) -> thread::JoinHandle<()> {
     let start_time = std::time::Instant::now();
-    
+
     let flight = flight_reservation.clone();
     let flight_path = flight_reservation.get_path();
-    
+
     let barrier_c1 = Arc::new(Barrier::new(3));
     let barrier_c2 = barrier_c1.clone();
     let barrier_c3 = barrier_c1.clone();
 
     let sem = rate_limit.clone();
-    sem.acquire(); 
-    
+    sem.acquire();
+
     // Send request to the airline and hotel(if was requested) simultaneously
-    let _handle1 = thread::spawn( move || { send_to_hotel(flight_reservation.get_hotel(), barrier_c1) });
-    let _handle2 = thread::spawn( move || { send_to_airline(flight, sem, barrier_c2) });
-    
+    let _handle1 = thread::spawn( move || {
+        send_to_hotel(flight_reservation.hotel, barrier_c1)
+    });
+    let _handle2 = thread::spawn( move || {
+        send_to_airline(flight, sem, barrier_c2)
+    });
+
     // Wait for transaction to be over to add statistics
-    return thread::spawn( move || { end_transaction(statistics, barrier_c3, start_time, flight_path) });
+    thread::spawn( move || {
+        end_transaction(statistics, barrier_c3, start_time, flight_path)
+    })
 }
