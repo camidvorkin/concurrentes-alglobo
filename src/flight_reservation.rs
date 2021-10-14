@@ -33,6 +33,6 @@ impl FlightReservation {
     }
 
     pub fn get_path(&self) -> String {
-        format!("Origin: {} -> Destination: {}", self.origin, self.destination)
+        format!("{} -> {}", self.origin, self.destination)
     }
 }

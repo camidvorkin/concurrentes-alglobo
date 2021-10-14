@@ -35,13 +35,11 @@ impl Statistics {
             // Add one flight
             let mut count = self.count_flights.write().unwrap();
             *count += 1;
-            print!("So far {} flights were completed \n", count);
 
             // Sum time elapsed since flight was processed
             let diff = start_time.elapsed().as_millis() as i64;
             let mut sum_time = self.sum_time.write().unwrap();
             *sum_time += diff;
-            print!("The total amount of waiting time is {} millis\n", sum_time);
 
             // Add (origin, destination)
             let mut map = self.destinations.write().expect("RwLock poisoned");
@@ -59,14 +57,10 @@ impl Statistics {
         *sum_time
     }
 
-    pub fn get_destinations(&self) -> HashMap<String, i64> {
-        let map = self.destinations.read().unwrap();
-        map.clone()
-    }
-
     pub fn get_avg_time(&self) -> f64 {
         let sum_time = self.sum_time.read().unwrap();
         let count = self.count_flights.read().unwrap();
+        if *count == 0 { return 0.0 };
         (*sum_time as f64) / (*count as f64)
     }
 

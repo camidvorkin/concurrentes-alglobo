@@ -30,8 +30,8 @@ struct AppState {
     statistics: Statistics,
 }
 
-fn keyboard_listener(statistics_keyboard: Statistics) {
-    println!("At any time press S to query for stats or Q to gracefully exit");
+fn keyboard_listener(statistics: Statistics) {
+    println!("At any time press S to query for stats or Q to gracefully exit \n");
     let stdin = io::stdin();
     for line in stdin.lock().lines() {
         match line {
@@ -44,8 +44,22 @@ fn keyboard_listener(statistics_keyboard: Statistics) {
                     break;
                 }
                 else if STAT_COMMANDS.contains(&input) {
-                    let x = statistics_keyboard.get_total_count();
-                    println!("Total number of reservations: {}", x);
+                    println!("Operational Stats\n\
+                              * Completed Flights: {} \n\
+                              * Total Waiting Time: {} \n\
+                              * Avg Response time: {:.2}", statistics.get_total_count(),
+                                                           statistics.get_sum_time(),
+                                                           statistics.get_avg_time());
+
+                    let top_routes = statistics.get_top_destinations(10);
+                    if top_routes.len() > 0 {
+                        println!("\nTop {} most solicited routes", top_routes.len());
+                        for (k, v) in top_routes {
+                            println!("* {} ({} flights)", k, v);
+                        }
+                    }
+
+
                 }
             },
             Err(_) => panic!("Failed to read stdin")
@@ -70,17 +84,6 @@ async fn main() -> std::io::Result<()> {
         keyboard_listener(statistics_keyboard.to_owned());
     });
 
-
-    // Print statistics
-    // print!("Total count {} \n", statistics.get_total_count());
-    // print!("Total sum time {} \n", statistics.get_sum_time());
-    // for (key, value) in statistics.get_destinations().iter() {
-    //     println!("{} -> Total count: {}", key, value);
-    // }
-    // for (k, v) in statistics.get_top_destinations(3) {
-    //     println!("{}. Total count: {}", k, v);
-    // }
-    // print!("Avg time: {:.2} \n", statistics.get_avg_time());
 
     HttpServer::new(move || {
         App::new()
