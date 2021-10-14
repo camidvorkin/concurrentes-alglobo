@@ -71,36 +71,22 @@
 <span id="68">68</span>
 <span id="69">69</span>
 <span id="70">70</span>
-<span id="71">71</span>
-<span id="72">72</span>
-<span id="73">73</span>
-<span id="74">74</span>
-<span id="75">75</span>
-<span id="76">76</span>
-<span id="77">77</span>
-<span id="78">78</span>
-<span id="79">79</span>
-<span id="80">80</span>
-<span id="81">81</span>
 </pre><div class="example-wrap"><pre class="rust ">
-
-
+<span class="doccomment">//! Flight Stats</span>
 <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">collections</span>::<span class="ident">HashMap</span>;
 <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">sync</span>::{<span class="ident">Arc</span>, <span class="ident">RwLock</span>};
 
 
+<span class="doccomment">/// Entity that holds the statistics of the flights</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Statistics</span> {
     <span class="ident">sum_time</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">RwLock</span><span class="op">&lt;</span><span class="ident">i64</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-    <span class="ident">count_flights</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">RwLock</span><span class="op">&lt;</span><span class="ident">i64</span><span class="op">&gt;</span><span class="op">&gt;</span>,
     <span class="ident">destinations</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">RwLock</span><span class="op">&lt;</span><span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">String</span> , <span class="ident">i64</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 }
 
-<span class="comment">// Impl clone</span>
 <span class="kw">impl</span> <span class="ident">Clone</span> <span class="kw">for</span> <span class="ident">Statistics</span> {
     <span class="kw">fn</span> <span class="ident">clone</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="ident">Statistics</span> {
             <span class="ident">sum_time</span>: <span class="self">self</span>.<span class="ident">sum_time</span>.<span class="ident">clone</span>(),
-            <span class="ident">count_flights</span>: <span class="self">self</span>.<span class="ident">count_flights</span>.<span class="ident">clone</span>(),
             <span class="ident">destinations</span>: <span class="self">self</span>.<span class="ident">destinations</span>.<span class="ident">clone</span>(),
         }
     }
@@ -110,33 +96,29 @@
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Statistics</span> {
         <span class="ident">Statistics</span> {
             <span class="ident">sum_time</span>: <span class="ident">Arc</span>::<span class="ident">new</span>(<span class="ident">RwLock</span>::<span class="ident">new</span>(<span class="number">0</span>)),
-            <span class="ident">count_flights</span>: <span class="ident">Arc</span>::<span class="ident">new</span>(<span class="ident">RwLock</span>::<span class="ident">new</span>(<span class="number">0</span>)),
             <span class="ident">destinations</span>: <span class="ident">Arc</span>::<span class="ident">new</span>(<span class="ident">RwLock</span>::<span class="ident">new</span>(<span class="ident">HashMap</span>::<span class="op">&lt;</span><span class="ident">String</span>, <span class="ident">i64</span><span class="op">&gt;</span>::<span class="ident">new</span>())),
         }
     }
 
+    <span class="doccomment">/// Adds request time to the accumulated sum, and the flights origin-&gt;destination to the hashmap</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">add_flight_reservation</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">start_time</span>: <span class="ident">std</span>::<span class="ident">time</span>::<span class="ident">Instant</span>, <span class="ident">destination</span>: <span class="ident">String</span>) {
         {
-            <span class="comment">// Add one flight</span>
-            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">count</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">count_flights</span>.<span class="ident">write</span>().<span class="ident">unwrap</span>();
-            <span class="kw-2">*</span><span class="ident">count</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
-            <span class="macro">print</span><span class="macro">!</span>(<span class="string">&quot;So far {} flights were completed \n&quot;</span>, <span class="ident">count</span>);
-            
-            <span class="comment">// Sum time elapsed since flight was processed</span>
             <span class="kw">let</span> <span class="ident">diff</span> <span class="op">=</span> <span class="ident">start_time</span>.<span class="ident">elapsed</span>().<span class="ident">as_millis</span>() <span class="kw">as</span> <span class="ident">i64</span>;
             <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">sum_time</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">sum_time</span>.<span class="ident">write</span>().<span class="ident">unwrap</span>();
             <span class="kw-2">*</span><span class="ident">sum_time</span> <span class="op">+</span><span class="op">=</span> <span class="ident">diff</span>;
-            <span class="macro">print</span><span class="macro">!</span>(<span class="string">&quot;The total amount of waiting time is {} millis\n&quot;</span>, <span class="ident">sum_time</span>);
-            
-            <span class="comment">// Add (origin, destination)</span>
+
             <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">map</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">destinations</span>.<span class="ident">write</span>().<span class="ident">expect</span>(<span class="string">&quot;RwLock poisoned&quot;</span>);
             <span class="kw-2">*</span><span class="ident">map</span>.<span class="ident">entry</span>(<span class="ident">destination</span>).<span class="ident">or_insert</span>(<span class="number">0</span>) <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
         }
     }
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_total_count</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">i64</span> {
-        <span class="kw">let</span> <span class="ident">count</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">count_flights</span>.<span class="ident">read</span>().<span class="ident">unwrap</span>();
-        <span class="kw-2">*</span><span class="ident">count</span>
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">count</span> <span class="op">=</span> <span class="number">0</span>;
+        <span class="kw">let</span> <span class="ident">map</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">destinations</span>.<span class="ident">read</span>().<span class="ident">unwrap</span>();
+        <span class="kw">for</span> (<span class="ident">_k</span>, <span class="ident">v</span>) <span class="kw">in</span> <span class="ident">map</span>.<span class="ident">iter</span>() {
+            <span class="ident">count</span><span class="op">+</span><span class="op">=</span><span class="ident">v</span>;
+        }
+        <span class="ident">count</span>
     }
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_sum_time</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">i64</span> {
@@ -144,17 +126,13 @@
         <span class="kw-2">*</span><span class="ident">sum_time</span>
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_destinations</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">String</span>, <span class="ident">i64</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">map</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">destinations</span>.<span class="ident">read</span>().<span class="ident">unwrap</span>();
-        <span class="ident">map</span>.<span class="ident">clone</span>()
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_avg_time</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">f64</span> {
+        <span class="kw">let</span> <span class="ident">sum_time</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">get_sum_time</span>();
+        <span class="kw">let</span> <span class="ident">count</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">get_total_count</span>();
+        <span class="kw">if</span> <span class="ident">count</span> <span class="op">=</span><span class="op">=</span> <span class="number">0</span> { <span class="kw">return</span> <span class="number">0.0</span> };
+        (<span class="ident">sum_time</span> <span class="op">/</span> <span class="ident">count</span>) <span class="kw">as</span> <span class="ident">f64</span>
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_avg_time</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">f64</span> {
-        <span class="kw">let</span> <span class="ident">sum_time</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">sum_time</span>.<span class="ident">read</span>().<span class="ident">unwrap</span>();
-        <span class="kw">let</span> <span class="ident">count</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">count_flights</span>.<span class="ident">read</span>().<span class="ident">unwrap</span>();
-        (<span class="kw-2">*</span><span class="ident">sum_time</span> <span class="kw">as</span> <span class="ident">f64</span>) <span class="op">/</span> (<span class="kw-2">*</span><span class="ident">count</span> <span class="kw">as</span> <span class="ident">f64</span>)
-    }
-    
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_top_destinations</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">n</span>: <span class="ident">usize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">String</span>, <span class="ident">i64</span>)<span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">map</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">destinations</span>.<span class="ident">read</span>().<span class="ident">unwrap</span>();
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">top_destinations</span> <span class="op">=</span> <span class="ident">map</span>.<span class="ident">iter</span>()

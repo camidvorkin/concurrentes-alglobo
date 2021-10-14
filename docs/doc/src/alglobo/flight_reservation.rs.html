@@ -40,26 +40,14 @@
 <span id="37">37</span>
 <span id="38">38</span>
 <span id="39">39</span>
-<span id="40">40</span>
-<span id="41">41</span>
-<span id="42">42</span>
-<span id="43">43</span>
-<span id="44">44</span>
-<span id="45">45</span>
-<span id="46">46</span>
-<span id="47">47</span>
-<span id="48">48</span>
-<span id="49">49</span>
-<span id="50">50</span>
-<span id="51">51</span>
-<span id="52">52</span>
-<span id="53">53</span>
-<span id="54">54</span>
-<span id="55">55</span>
 </pre><div class="example-wrap"><pre class="rust ">
+<span class="doccomment">//! Flight Reservations Struct</span>
 <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">string</span>::<span class="ident">ToString</span>;
 <span class="kw">use</span> <span class="ident">serde</span>::<span class="ident">Deserialize</span>;
 
+<span class="doccomment">/// Struct</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// This struct can be deserialized from a JSON (thanks to serde), making it easier to use, because we now can receive it from the web request in a JSON form</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">FlightReservation</span> {
     <span class="kw">pub</span> <span class="ident">origin</span>: <span class="ident">String</span>,
@@ -70,46 +58,26 @@
 
 <span class="kw">impl</span> <span class="ident">ToString</span> <span class="kw">for</span> <span class="ident">FlightReservation</span> {
     <span class="kw">fn</span> <span class="ident">to_string</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">String</span> {
-        <span class="kw">return</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;FlightReservation: origin: {}, destination: {}, airline: {}, hotel: {}&quot;</span>, <span class="self">self</span>.<span class="ident">origin</span>, <span class="self">self</span>.<span class="ident">destination</span>, <span class="self">self</span>.<span class="ident">airline</span>, <span class="self">self</span>.<span class="ident">hotel</span>);
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">string</span> <span class="op">=</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{} by {}&quot;</span>, <span class="self">self</span>.<span class="ident">get_route</span>(), <span class="self">self</span>.<span class="ident">airline</span>);
+        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">hotel</span> { <span class="ident">string</span> <span class="op">+</span><span class="op">=</span> <span class="string">&quot; (hotel)&quot;</span>} ;
+        <span class="ident">string</span>
     }
 }
 
 <span class="kw">impl</span> <span class="ident">Clone</span> <span class="kw">for</span> <span class="ident">FlightReservation</span> {
     <span class="kw">fn</span> <span class="ident">clone</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
-        <span class="kw">return</span> <span class="ident">FlightReservation</span> {
+        <span class="ident">FlightReservation</span> {
             <span class="ident">origin</span>: <span class="self">self</span>.<span class="ident">origin</span>.<span class="ident">clone</span>(),
             <span class="ident">destination</span>: <span class="self">self</span>.<span class="ident">destination</span>.<span class="ident">clone</span>(),
             <span class="ident">airline</span>: <span class="self">self</span>.<span class="ident">airline</span>.<span class="ident">clone</span>(),
             <span class="ident">hotel</span>: <span class="self">self</span>.<span class="ident">hotel</span>,
-        };
+        }
     }
 }
 
 <span class="kw">impl</span> <span class="ident">FlightReservation</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">origin</span>: <span class="ident">String</span>, <span class="ident">destination</span>: <span class="ident">String</span>, <span class="ident">airline</span>: <span class="ident">String</span>, <span class="ident">hotel</span>: <span class="ident">bool</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">FlightReservation</span> {
-        <span class="ident">FlightReservation</span> {
-            <span class="ident">origin</span>,
-            <span class="ident">destination</span>,
-            <span class="ident">airline</span>,
-            <span class="ident">hotel</span>
-        }
-    }
-
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_airline</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">String</span> {
-        <span class="kw">return</span> <span class="self">self</span>.<span class="ident">airline</span>.<span class="ident">clone</span>();
-    }
-
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_hotel</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
-        <span class="kw">return</span> <span class="self">self</span>.<span class="ident">hotel</span>.<span class="ident">clone</span>();
-    }
-
-    <span class="comment">// For logging purposes</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_flight_code</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">String</span> {
-        <span class="kw">return</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{}-{}&quot;</span>, <span class="self">self</span>.<span class="ident">origin</span>, <span class="self">self</span>.<span class="ident">destination</span>);
-    }
-
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_path</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">String</span> {
-        <span class="kw">return</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;Origin: {} -&gt; Destination: {}&quot;</span>, <span class="self">self</span>.<span class="ident">origin</span>, <span class="self">self</span>.<span class="ident">destination</span>);
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_route</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">String</span> {
+        <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{} -&gt; {}&quot;</span>, <span class="self">self</span>.<span class="ident">origin</span>, <span class="self">self</span>.<span class="ident">destination</span>)
     }
 }
 </pre></div>

@@ -1,6 +1,10 @@
+//! Flight Reservations Struct
 use std::string::ToString;
 use serde::Deserialize;
 
+/// Struct
+///
+/// This struct can be deserialized from a JSON (thanks to serde), making it easier to use, because we now can receive it from the web request in a JSON form
 #[derive(Deserialize)]
 pub struct FlightReservation {
     pub origin: String,

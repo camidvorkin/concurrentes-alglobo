@@ -1,4 +1,4 @@
-
+//! Make the reservations
 use std::env;
 use std::thread;
 use rand::Rng;
@@ -8,19 +8,23 @@ use crate::statistics::Statistics;
 use std_semaphore::Semaphore;
 use std::sync::{Arc, Barrier};
 
+/// If the user doesn't set the ENVVAR `RETRY_SECONDS` we default to this value
+const DEFAULT_RETRY_SECONDS: i32 = 5;
+
+/// Simulated request to an hypothetical hotel web server
 fn simulate_hotel() -> bool {
     thread::sleep(Duration::from_secs(1));
     true
 }
 
-// Request to airline. Returns true if request was accepted, false otherwise
+/// Simulated request to an hypothetical airline web server
 fn simulate_airline() -> bool {
     thread::sleep(Duration::from_secs(1));
     let rng = rand::thread_rng().gen_bool(0.8);
     rng
 }
 
-// Request to hotels
+/// Function that makes the request to the hotel
 fn send_to_hotel(flight_info: FlightReservation, barrier: Arc<Barrier>) -> () {
     if flight_info.hotel {
         if simulate_hotel() {
@@ -30,10 +34,13 @@ fn send_to_hotel(flight_info: FlightReservation, barrier: Arc<Barrier>) -> () {
     barrier.wait();
 }
 
+/// Function that makes the request to the airline
+///
+/// If the request was declined by the airline, we retry it in N seconds (either a default value, or the ENVVAR `RETRY_SECONDS`)
 fn send_to_airline(flight_info: FlightReservation, sem: Arc<Semaphore>, barrier: Arc<Barrier>) -> () {
     let retry_seconds = match env::var("RETRY_SECONDS") {
         Ok(val) => val.parse::<u64>().unwrap(),
-        Err(_) => 5,
+        Err(_) => DEFAULT_RETRY_SECONDS,
     };
 
     loop {
@@ -48,12 +55,15 @@ fn send_to_airline(flight_info: FlightReservation, sem: Arc<Semaphore>, barrier:
     }
 }
 
+/// After the requests are done, we add the flight to our statistics
 fn end_transaction(mut statistics: Statistics, barrier: Arc<Barrier>, start_time: std::time::Instant, flight_path: String) -> () {
     barrier.wait();
     statistics.add_flight_reservation(start_time, flight_path);
 }
 
-// Request flight
+/// We make a reservation by sending the request to the airline webserver and, if we are dealing with packages, to the hotel server
+///
+/// The result is the union of this two responses
 pub fn reserve(flight_reservation: FlightReservation, rate_limit:Arc<Semaphore>, statistics: Statistics) -> thread::JoinHandle<()> {
     let start_time = std::time::Instant::now();
 

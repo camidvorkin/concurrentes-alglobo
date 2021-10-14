@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
 
+/// Entity that holds the statistics of the flights
 pub struct Statistics {
     sum_time: Arc<RwLock<i64>>,
     destinations: Arc<RwLock<HashMap<String , i64>>>,

@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["FlightReservation",""]]});
+initSidebarItems({"struct":[["FlightReservation","Struct"]]});

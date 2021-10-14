@@ -1,1 +1,1 @@
-initSidebarItems({"constant":[["AIRLINES_FILE",""]],"fn":[["process_airlines",""],["read_file",""]],"type":[["Airlines",""]]});
+initSidebarItems({"fn":[["read_file","Read CSV file and return split content"]]});
