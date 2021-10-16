@@ -45,10 +45,10 @@ use std::{io, thread};
 const AIRLINES_FILE: &str = "src/configs/airlines.txt";
 
 /// Possible command strings that trigger the exit action
-const QUIT_COMMANDS: [&'static str; 2] = ["Q", "QUIT"];
+const QUIT_COMMANDS: [&str; 2] = ["Q", "QUIT"];
 
 /// Possible command strings that trigger the show stats action
-const STAT_COMMANDS: [&'static str; 2] = ["S", "STATS"];
+const STAT_COMMANDS: [&str; 2] = ["S", "STATS"];
 
 /// This is the shared state that will be shared across every thread listening to new requests: the airlines configurations and the universal stats entity
 struct AppState {
@@ -82,7 +82,7 @@ fn keyboard_listener(statistics: Statistics) {
                     );
 
                     let top_routes = statistics.get_top_destinations(10);
-                    if top_routes.len() > 0 {
+                    if !top_routes.is_empty() {
                         println!("Top {} most solicited routes", top_routes.len());
                         for (k, v) in top_routes {
                             println!("* {} ({} flights)", k, v);
@@ -111,7 +111,7 @@ async fn main() -> std::io::Result<()> {
     let (logger_sender, logger_receiver): (Sender<String>, Receiver<String>) = mpsc::channel();
 
     thread::spawn(move || {
-        keyboard_listener(statistics_keyboard.to_owned());
+        keyboard_listener(statistics_keyboard);
     });
 
     thread::spawn(move || {
