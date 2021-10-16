@@ -26,9 +26,10 @@
 //! ---
 //!
 //! The server has a thread always listening to keyboard events. If the user presses `s` the server will show the flight stats, and if the user presses `q` the server will gracefully exit.
+
+#![forbid(unsafe_code)]
 use std::env;
 use std::sync::mpsc::{self, Receiver, Sender};
-use std::time::UNIX_EPOCH;
 mod airlines;
 mod alglobo;
 mod flight_reservation;
