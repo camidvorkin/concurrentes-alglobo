@@ -28,6 +28,7 @@
 //! The server has a thread always listening to keyboard events. If the user presses `s` the server will show the flight stats, and if the user presses `q` the server will gracefully exit.
 use std::env;
 use std::sync::mpsc::{self, Receiver, Sender};
+use std::time::UNIX_EPOCH;
 mod airlines;
 mod alglobo;
 mod flight_reservation;
@@ -117,9 +118,10 @@ async fn main() -> std::io::Result<()> {
     thread::spawn(move || {
         let mut log = std::fs::File::create("alglobo.log").expect("Failed to create log file");
         loop {
+            let t = chrono::prelude::Local::now();
             let s = logger_receiver.recv().unwrap();
             println!("{}", s);
-            log.write_all(format!("{}\n", s).as_bytes())
+            log.write_all(format!("{:?} |  {}\n", t, s).as_bytes())
                 .expect("write failed");
         }
     });
