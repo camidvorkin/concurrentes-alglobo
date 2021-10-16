@@ -106,6 +106,7 @@ async fn main() -> std::io::Result<()> {
         None => AIRLINES_FILE.to_string(),
     };
 
+    let airlines = airlines::from_file(&filename_airline);
     let statistics = Statistics::new();
     let statistics_keyboard = statistics.clone();
     let statistics_webserver = statistics.clone();
@@ -136,7 +137,7 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         App::new()
             .data(AppState {
-                airlines: airlines::from_file(&filename_airline),
+                airlines: airlines.to_owned(),
                 statistics: statistics_webserver.to_owned(),
                 logger_sender: logger_sender.clone(),
             })
