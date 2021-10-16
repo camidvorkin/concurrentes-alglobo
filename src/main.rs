@@ -112,11 +112,11 @@ async fn main() -> std::io::Result<()> {
 
     let (logger_sender, logger_receiver): (Sender<String>, Receiver<String>) = mpsc::channel();
 
-    thread::spawn(move || {
+    thread::Builder::new().name("keyboard".to_string()).spawn(move || {
         keyboard_listener(statistics_keyboard);
-    });
+    }).expect("thread creation failed");
 
-    thread::spawn(move || {
+    thread::Builder::new().name("logger".to_string()).spawn(move || {
         let mut log = std::fs::File::create("alglobo.log").expect("Failed to create log file");
         loop {
             let t = chrono::prelude::Local::now();
@@ -125,7 +125,7 @@ async fn main() -> std::io::Result<()> {
             log.write_all(format!("{:?} |  {}\n", t, s).as_bytes())
                 .expect("write failed");
         }
-    });
+    }).expect("thread creation failed");
 
     HttpServer::new(move || {
         App::new()
@@ -160,12 +160,12 @@ fn reservation(req: web::Json<FlightReservation>, appstate: web::Data<AppState>)
     let s = format!("[{}] New Request", flight.to_string());
     appstate.logger_sender.send(s).unwrap();
 
-    let reservation = alglobo::reserve(
+    alglobo::reserve(
         flight,
         semaphore.unwrap().clone(),
         appstate.statistics.clone(),
         appstate.logger_sender.clone(),
     );
-    reservation.join().unwrap();
+
     HttpResponse::Ok().finish()
 }

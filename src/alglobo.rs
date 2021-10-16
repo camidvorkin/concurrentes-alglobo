@@ -67,26 +67,15 @@ fn send_to_airline(
     }
 }
 
-/// After the requests are done, we add the flight to our statistics
-fn end_transaction(
-    mut statistics: Statistics,
-    barrier: Arc<Barrier>,
-    start_time: std::time::Instant,
-    flight_path: String,
-) {
-    barrier.wait();
-    statistics.add_flight_reservation(start_time, flight_path);
-}
-
 /// We make a reservation by sending the request to the airline webserver and, if we are dealing with packages, to the hotel server
 ///
 /// The result is the union of this two responses
 pub fn reserve(
     flight_reservation: FlightReservation,
     rate_limit: Arc<Semaphore>,
-    statistics: Statistics,
+    mut statistics: Statistics,
     logger_sender: Sender<String>,
-) -> thread::JoinHandle<()> {
+)  {
     let start_time = std::time::Instant::now();
 
     let flight_hotel = flight_reservation.clone();
@@ -103,18 +92,18 @@ pub fn reserve(
     rate_limit.acquire();
 
     // Send request to the airline and hotel (if requested) concurrently
-    thread::spawn(move || send_to_hotel(flight_hotel, barrier_hotel, logger_sender_hotel));
-    thread::spawn(move || {
+    thread::Builder::new().name("hotel".to_string()).spawn(move || send_to_hotel(flight_hotel, barrier_hotel, logger_sender_hotel)).expect("thread creation failed");
+
+    thread::Builder::new().name(format!("{}", flight_reservation.airline.to_string())).spawn(move || {
         send_to_airline(
             flight_airline,
             rate_limit,
             barrier_airline,
             logger_sender_airline,
         )
-    });
+    }).expect("thread creation failed");
 
-    // Wait for transaction to be over to add statistics
-    thread::spawn(move || {
-        end_transaction(statistics, barrier, start_time, flight_path);
-    })
+
+    barrier.wait();
+    statistics.add_flight_reservation(start_time, flight_path);
 }
