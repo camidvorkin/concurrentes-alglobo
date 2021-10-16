@@ -1,6 +1,6 @@
 //! Flight Reservations Struct
-use std::string::ToString;
 use serde::Deserialize;
+use std::string::ToString;
 
 /// Struct
 ///
@@ -16,8 +16,11 @@ pub struct FlightReservation {
 impl ToString for FlightReservation {
     fn to_string(&self) -> String {
         let mut string = format!("{}->{}", self.origin, self.destination);
-        if self.hotel { string += &format!(" ({}+)", self.airline) }
-        else { string += &format!(" ({})", self.airline) }
+        if self.hotel {
+            string += &format!(" ({}+)", self.airline)
+        } else {
+            string += &format!(" ({})", self.airline)
+        }
         string
     }
 }

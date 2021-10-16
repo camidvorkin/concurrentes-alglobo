@@ -10,8 +10,8 @@ pub fn read_file(filename: &str) -> Result<Vec<Vec<String>>, Box<dyn Error>> {
     file.read_to_string(&mut contents)?;
     let mut result = Vec::<Vec<String>>::new();
     for line in contents.lines() {
-        let flight: Vec<String>  = line.split(",").map(|x| x.to_string()).collect();
+        let flight: Vec<String> = line.split(",").map(|x| x.to_string()).collect();
         result.push(flight);
-      }
+    }
     Ok(result)
 }

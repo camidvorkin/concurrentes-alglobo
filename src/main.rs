@@ -28,18 +28,18 @@
 //! The server has a thread always listening to keyboard events. If the user presses `s` the server will show the flight stats, and if the user presses `q` the server will gracefully exit.
 use std::env;
 use std::sync::mpsc::{self, Receiver, Sender};
+mod airlines;
+mod alglobo;
 mod flight_reservation;
+mod informe;
 mod statistics;
 mod utils;
-mod alglobo;
-mod informe;
-mod airlines;
-use airlines::Airlines;
-use actix_web::{web, App, HttpResponse, HttpServer, post};
-use statistics::Statistics;
 use crate::flight_reservation::FlightReservation;
-use std::{io, thread};
+use actix_web::{post, web, App, HttpResponse, HttpServer};
+use airlines::Airlines;
+use statistics::Statistics;
 use std::io::prelude::*;
+use std::{io, thread};
 
 /// This can be either a CLA or this default value
 const AIRLINES_FILE: &str = "src/configs/airlines.txt";
@@ -70,14 +70,16 @@ fn keyboard_listener(statistics: Statistics) {
                     // o mandar una señal a main para que lo mate
                     println!("quit");
                     break;
-                }
-                else if STAT_COMMANDS.contains(&input) {
-                    println!("Operational Stats \n\
+                } else if STAT_COMMANDS.contains(&input) {
+                    println!(
+                        "Operational Stats \n\
                               * Completed Flights: {} \n\
                               * Total Waiting Time: {} \n\
-                              * Avg Response time: {:.2} \n", statistics.get_total_count(),
-                                                           statistics.get_sum_time(),
-                                                           statistics.get_avg_time());
+                              * Avg Response time: {:.2} \n",
+                        statistics.get_total_count(),
+                        statistics.get_sum_time(),
+                        statistics.get_avg_time()
+                    );
 
                     let top_routes = statistics.get_top_destinations(10);
                     if top_routes.len() > 0 {
@@ -86,13 +88,11 @@ fn keyboard_listener(statistics: Statistics) {
                             println!("* {} ({} flights)", k, v);
                         }
                     }
-
-
                 }
-            },
-            Err(_) => panic!("Failed to read stdin")
+            }
+            Err(_) => panic!("Failed to read stdin"),
         }
-    };
+    }
 }
 
 /// The main function. It starts a thread for the keyboard listener, and it starts the actix-web server
@@ -118,10 +118,10 @@ async fn main() -> std::io::Result<()> {
         let mut log = std::fs::File::create("alglobo.log").expect("Failed to create log file");
         loop {
             let s = logger_receiver.recv().unwrap();
-            log.write_all(format!("{}\n",s).as_bytes()).expect("write failed");
+            log.write_all(format!("{}\n", s).as_bytes())
+                .expect("write failed");
         }
     });
-
 
     HttpServer::new(move || {
         App::new()
@@ -131,9 +131,10 @@ async fn main() -> std::io::Result<()> {
                 logger_sender: logger_sender.clone(),
             })
             .service(reservation)
-    }).bind(("127.0.0.1", 8080))?
-      .run()
-      .await
+    })
+    .bind(("127.0.0.1", 8080))?
+    .run()
+    .await
 
     // Keyboard join?
 }
@@ -144,21 +145,24 @@ fn reservation(req: web::Json<FlightReservation>, appstate: web::Data<AppState>)
     let semaphore = appstate.airlines.get(&req.airline);
     match semaphore {
         None => {
-            return HttpResponse::NotAcceptable().body("Airline not present on server configuration");
-        },
+            return HttpResponse::NotAcceptable()
+                .body("Airline not present on server configuration");
+        }
         Some(_) => (),
     };
 
     let flight: FlightReservation = req.clone();
 
     let s = format!("[{}] New Request", flight.to_string());
-    println!("{}",s);
+    println!("{}", s);
     appstate.logger_sender.send(s).unwrap();
 
-    let reservation = alglobo::reserve(flight,
-                                       semaphore.unwrap().clone(),
-                                       appstate.statistics.clone(),
-                                       appstate.logger_sender.clone());
+    let reservation = alglobo::reserve(
+        flight,
+        semaphore.unwrap().clone(),
+        appstate.statistics.clone(),
+        appstate.logger_sender.clone(),
+    );
     reservation.join().unwrap();
     HttpResponse::Ok().finish()
 }

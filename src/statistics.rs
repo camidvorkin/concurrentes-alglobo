@@ -2,11 +2,10 @@
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
-
 /// Entity that holds the statistics of the flights
 pub struct Statistics {
     sum_time: Arc<RwLock<i64>>,
-    destinations: Arc<RwLock<HashMap<String , i64>>>,
+    destinations: Arc<RwLock<HashMap<String, i64>>>,
 }
 
 impl Clone for Statistics {
@@ -42,7 +41,7 @@ impl Statistics {
         let mut count = 0;
         let map = self.destinations.read().unwrap();
         for (_k, v) in map.iter() {
-            count+=v;
+            count += v;
         }
         count
     }
@@ -55,13 +54,16 @@ impl Statistics {
     pub fn get_avg_time(&self) -> f64 {
         let sum_time = self.get_sum_time();
         let count = self.get_total_count();
-        if count == 0 { return 0.0 };
+        if count == 0 {
+            return 0.0;
+        };
         (sum_time / count) as f64
     }
 
     pub fn get_top_destinations(&self, n: usize) -> Vec<(String, i64)> {
         let map = self.destinations.read().unwrap();
-        let mut top_destinations = map.iter()
+        let mut top_destinations = map
+            .iter()
             .map(|(k, v)| (k.clone(), *v))
             .collect::<Vec<(String, i64)>>();
         top_destinations.sort_by(|a, b| b.1.cmp(&a.1));
