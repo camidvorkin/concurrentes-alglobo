@@ -21,22 +21,20 @@ fn simulate_hotel() -> bool {
 /// Simulated request to an hypothetical airline web server
 fn simulate_airline() -> bool {
     thread::sleep(Duration::from_secs(1));
-    let rng = rand::thread_rng().gen_bool(0.8);
-    rng
+
+    rand::thread_rng().gen_bool(0.8)
 }
 
 /// Function that makes the request to the hotel
 fn send_to_hotel(
     flight_info: FlightReservation,
     barrier: Arc<Barrier>,
-    logger_sender: Sender<String>)
-    {
-    if flight_info.hotel {
-        if simulate_hotel() {
-            let s = format!("[{}] Hotel Reservation: OK", flight_info.to_string());
-            println!("{}", s);
-            logger_sender.send(s).unwrap();
-        }
+    logger_sender: Sender<String>,
+) {
+    if flight_info.hotel && simulate_hotel() {
+        let s = format!("[{}] Hotel Reservation: OK", flight_info.to_string());
+        println!("{}", s);
+        logger_sender.send(s).unwrap();
     }
     barrier.wait();
 }
@@ -49,7 +47,7 @@ fn send_to_airline(
     sem: Arc<Semaphore>,
     barrier: Arc<Barrier>,
     logger_sender: Sender<String>,
-) -> () {
+) {
     let retry_seconds = match env::var("RETRY_SECONDS") {
         Ok(val) => val.parse::<u64>().unwrap(),
         Err(_) => DEFAULT_RETRY_SECONDS,
@@ -78,7 +76,7 @@ fn end_transaction(
     barrier: Arc<Barrier>,
     start_time: std::time::Instant,
     flight_path: String,
-) -> () {
+) {
     barrier.wait();
     statistics.add_flight_reservation(start_time, flight_path);
 }
@@ -103,7 +101,7 @@ pub fn reserve(
     let barrier_airline = barrier.clone();
 
     let logger_sender_hotel = logger_sender.clone();
-    let logger_sender_airline = logger_sender.clone();
+    let logger_sender_airline = logger_sender;
 
     rate_limit.acquire();
 
