@@ -27,6 +27,7 @@
 //!
 //! The server has a thread always listening to keyboard events. If the user presses `s` the server will show the flight stats, and if the user presses `q` the server will gracefully exit.
 use std::env;
+use std::sync::mpsc::{self, Receiver, Sender};
 mod flight_reservation;
 mod statistics;
 mod utils;
@@ -53,6 +54,7 @@ const STAT_COMMANDS: [&'static str; 2] = ["S", "STATS"];
 struct AppState {
     airlines: Airlines,
     statistics: Statistics,
+    logger_sender: Sender<String>,
 }
 
 /// Listents to `s` (show stats) and `q` (quit) commands
@@ -73,13 +75,13 @@ fn keyboard_listener(statistics: Statistics) {
                     println!("Operational Stats \n\
                               * Completed Flights: {} \n\
                               * Total Waiting Time: {} \n\
-                              * Avg Response time: {:.2}", statistics.get_total_count(),
+                              * Avg Response time: {:.2} \n", statistics.get_total_count(),
                                                            statistics.get_sum_time(),
                                                            statistics.get_avg_time());
 
                     let top_routes = statistics.get_top_destinations(10);
                     if top_routes.len() > 0 {
-                        println!("\nTop {} most solicited routes", top_routes.len());
+                        println!("Top {} most solicited routes", top_routes.len());
                         for (k, v) in top_routes {
                             println!("* {} ({} flights)", k, v);
                         }
@@ -106,8 +108,18 @@ async fn main() -> std::io::Result<()> {
     let statistics_keyboard = statistics.clone();
     let statistics_webserver = statistics.clone();
 
+    let (logger_sender, logger_receiver): (Sender<String>, Receiver<String>) = mpsc::channel();
+
     thread::spawn(move || {
         keyboard_listener(statistics_keyboard.to_owned());
+    });
+
+    thread::spawn(move || {
+        let mut log = std::fs::File::create("alglobo.log").expect("Failed to create log file");
+        loop {
+            let s = logger_receiver.recv().unwrap();
+            log.write_all(format!("{}\n",s).as_bytes()).expect("write failed");
+        }
     });
 
 
@@ -116,6 +128,7 @@ async fn main() -> std::io::Result<()> {
             .data(AppState {
                 airlines: airlines::from_file(&filename_airline),
                 statistics: statistics_webserver.to_owned(),
+                logger_sender: logger_sender.clone(),
             })
             .service(reservation)
     }).bind(("127.0.0.1", 8080))?
@@ -137,10 +150,15 @@ fn reservation(req: web::Json<FlightReservation>, appstate: web::Data<AppState>)
     };
 
     let flight: FlightReservation = req.clone();
-    println!("[{}] New Request", flight.to_string());
+
+    let s = format!("[{}] New Request", flight.to_string());
+    println!("{}",s);
+    appstate.logger_sender.send(s).unwrap();
+
     let reservation = alglobo::reserve(flight,
                                        semaphore.unwrap().clone(),
-                                       appstate.statistics.clone());
+                                       appstate.statistics.clone(),
+                                       appstate.logger_sender.clone());
     reservation.join().unwrap();
     HttpResponse::Ok().finish()
 }
