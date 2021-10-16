@@ -29,8 +29,8 @@ fn simulate_airline() -> bool {
 fn send_to_hotel(
     flight_info: FlightReservation,
     barrier: Arc<Barrier>,
-    logger_sender: Sender<String>,
-) -> () {
+    logger_sender: Sender<String>)
+    {
     if flight_info.hotel {
         if simulate_hotel() {
             let s = format!("[{}] Hotel Reservation: OK", flight_info.to_string());
