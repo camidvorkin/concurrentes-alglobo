@@ -9,7 +9,7 @@ use std_semaphore::Semaphore;
 use std::sync::{Arc, Barrier};
 
 /// If the user doesn't set the ENVVAR `RETRY_SECONDS` we default to this value
-const DEFAULT_RETRY_SECONDS: i32 = 5;
+const DEFAULT_RETRY_SECONDS: u64 = 5;
 
 /// Simulated request to an hypothetical hotel web server
 fn simulate_hotel() -> bool {
