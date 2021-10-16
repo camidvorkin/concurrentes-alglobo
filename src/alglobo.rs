@@ -33,7 +33,6 @@ fn send_to_hotel(
 ) {
     if flight_info.hotel && simulate_hotel() {
         let s = format!("[{}] Hotel Reservation: OK", flight_info.to_string());
-        println!("{}", s);
         logger_sender.send(s).unwrap();
     }
     barrier.wait();
@@ -56,7 +55,6 @@ fn send_to_airline(
     loop {
         if simulate_airline() {
             let s = format!("[{}] Flight Reservation: OK", flight_info.to_string());
-            println!("{}", s);
             logger_sender.send(s).unwrap();
 
             sem.release();
@@ -64,7 +62,6 @@ fn send_to_airline(
             break;
         }
         let s = format!("[{}] Flight Reservation: RETRY", flight_info.to_string());
-        println!("{}", s);
         logger_sender.send(s).unwrap();
         thread::sleep(Duration::from_secs(retry_seconds));
     }

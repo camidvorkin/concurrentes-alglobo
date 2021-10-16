@@ -118,6 +118,7 @@ async fn main() -> std::io::Result<()> {
         let mut log = std::fs::File::create("alglobo.log").expect("Failed to create log file");
         loop {
             let s = logger_receiver.recv().unwrap();
+            println!("{}", s);
             log.write_all(format!("{}\n", s).as_bytes())
                 .expect("write failed");
         }
@@ -154,7 +155,6 @@ fn reservation(req: web::Json<FlightReservation>, appstate: web::Data<AppState>)
     let flight: FlightReservation = req.clone();
 
     let s = format!("[{}] New Request", flight.to_string());
-    println!("{}", s);
     appstate.logger_sender.send(s).unwrap();
 
     let reservation = alglobo::reserve(
