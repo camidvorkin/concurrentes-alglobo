@@ -112,20 +112,26 @@ async fn main() -> std::io::Result<()> {
 
     let (logger_sender, logger_receiver): (Sender<String>, Receiver<String>) = mpsc::channel();
 
-    thread::Builder::new().name("keyboard".to_string()).spawn(move || {
-        keyboard_listener(statistics_keyboard);
-    }).expect("thread creation failed");
+    thread::Builder::new()
+        .name("keyboard".to_string())
+        .spawn(move || {
+            keyboard_listener(statistics_keyboard);
+        })
+        .expect("thread creation failed");
 
-    thread::Builder::new().name("logger".to_string()).spawn(move || {
-        let mut log = std::fs::File::create("alglobo.log").expect("Failed to create log file");
-        loop {
-            let t = chrono::prelude::Local::now();
-            let s = logger_receiver.recv().unwrap();
-            println!("{}", s);
-            log.write_all(format!("{:?} |  {}\n", t, s).as_bytes())
-                .expect("write failed");
-        }
-    }).expect("thread creation failed");
+    thread::Builder::new()
+        .name("logger".to_string())
+        .spawn(move || {
+            let mut log = std::fs::File::create("alglobo.log").expect("Failed to create log file");
+            loop {
+                let t = chrono::prelude::Local::now();
+                let s = logger_receiver.recv().unwrap();
+                println!("{}", s);
+                log.write_all(format!("{:?} |  {}\n", t, s).as_bytes())
+                    .expect("write failed");
+            }
+        })
+        .expect("thread creation failed");
 
     HttpServer::new(move || {
         App::new()

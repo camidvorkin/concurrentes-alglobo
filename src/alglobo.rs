@@ -75,7 +75,7 @@ pub fn reserve(
     rate_limit: Arc<Semaphore>,
     mut statistics: Statistics,
     logger_sender: Sender<String>,
-)  {
+) {
     let start_time = std::time::Instant::now();
 
     let flight_hotel = flight_reservation.clone();
@@ -92,17 +92,22 @@ pub fn reserve(
     rate_limit.acquire();
 
     // Send request to the airline and hotel (if requested) concurrently
-    thread::Builder::new().name("hotel".to_string()).spawn(move || send_to_hotel(flight_hotel, barrier_hotel, logger_sender_hotel)).expect("thread creation failed");
+    thread::Builder::new()
+        .name("hotel".to_string())
+        .spawn(move || send_to_hotel(flight_hotel, barrier_hotel, logger_sender_hotel))
+        .expect("thread creation failed");
 
-    thread::Builder::new().name(format!("{}", flight_reservation.airline.to_string())).spawn(move || {
-        send_to_airline(
-            flight_airline,
-            rate_limit,
-            barrier_airline,
-            logger_sender_airline,
-        )
-    }).expect("thread creation failed");
-
+    thread::Builder::new()
+        .name(flight_reservation.airline)
+        .spawn(move || {
+            send_to_airline(
+                flight_airline,
+                rate_limit,
+                barrier_airline,
+                logger_sender_airline,
+            )
+        })
+        .expect("thread creation failed");
 
     barrier.wait();
     statistics.add_flight_reservation(start_time, flight_path);
