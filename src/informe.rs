@@ -19,3 +19,4 @@
 //! exxplicar porque no usamos stdout para el log (las stats te lo cagan)
 //!
 //! Diagramas de entidades realizados (structs y demás).
+//! ![diagrama de x](../../../../img/rust.jpg)
