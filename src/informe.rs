@@ -6,11 +6,16 @@
 //!
 //!
 //! Ideas de Todos:
-//! Hacer que los hilos tengan el nombre de lo que estan haciendo, y eso es lo que imprimis y va al log (en vez de imprimir el flight_info)
 //!
 //! Hablar de correctitud, estado mutable compartido, por que no es fork join, barriers y semaforos
 //!
-//! Usar #![forbid(unsafe_code)]
 //!
-//! Hacer tests... unitarios y de curls
-//! usar apache AB para crear los Curls
+//! Una explicación del diseño y de las decisiones tomadas para la implementación de la solución.
+//!
+//! Detalle de resolución de la lista de tareas anterior.
+//!
+//! Diagrama que refleje los threads, el flujo de comunicación entre ellos y los datos que intercambian.
+//!
+//! exxplicar porque no usamos stdout para el log (las stats te lo cagan)
+//!
+//! Diagramas de entidades realizados (structs y demás).
