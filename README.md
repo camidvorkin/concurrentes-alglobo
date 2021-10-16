@@ -10,6 +10,8 @@ Si no tenes ganas de leer el informe dentro de rustdoc, lo podes encontrar en un
 
 ## Un par de comandos
 
+Para correr pre-commit: `pre-commit run --all-files`
+
 Para generar la documentacion: `cargo doc --no-deps --target-dir docs`
 
 Para generar el PDF lindo: `TODO`
