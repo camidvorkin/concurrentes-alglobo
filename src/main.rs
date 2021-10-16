@@ -137,7 +137,7 @@ fn reservation(req: web::Json<FlightReservation>, appstate: web::Data<AppState>)
     };
 
     let flight: FlightReservation = req.clone();
-    println!("New Request! {}", flight.to_string());
+    println!("[{}] New Request", flight.to_string());
     let reservation = alglobo::reserve(flight,
                                        semaphore.unwrap().clone(),
                                        appstate.statistics.clone());

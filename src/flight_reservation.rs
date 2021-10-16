@@ -15,8 +15,9 @@ pub struct FlightReservation {
 
 impl ToString for FlightReservation {
     fn to_string(&self) -> String {
-        let mut string = format!("{} by {}", self.get_route(), self.airline);
-        if self.hotel { string += " (hotel)"} ;
+        let mut string = format!("{}->{}", self.origin, self.destination);
+        if self.hotel { string += &format!(" ({}+)", self.airline) }
+        else { string += &format!(" ({})", self.airline) }
         string
     }
 }
