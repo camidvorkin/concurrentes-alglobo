@@ -123,7 +123,12 @@ async fn main() -> std::io::Result<()> {
     thread::Builder::new()
         .name("logger".to_string())
         .spawn(move || {
-            let mut log = std::fs::File::create("alglobo.log").expect("Failed to create log file");
+            let mut log = std::fs::OpenOptions::new()
+                .append(true)
+                .create(true)
+                .open("alglobo.log")
+                .expect("Failed to create log file");
+
             loop {
                 let t = chrono::prelude::Local::now();
                 let s = logger_receiver.recv().unwrap();
