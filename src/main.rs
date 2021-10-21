@@ -36,6 +36,7 @@ mod statsactor;
 mod utils;
 use crate::flight_reservation::FlightReservation;
 use actix_web::{post, web, App, HttpResponse, HttpServer};
+use actix::{Actor, System};
 use airlines::{Airlines, InfoFlight};
 use hotel::{Hotel, InfoPackage};
 use statsactor::{StatsActor, Stat};
@@ -61,23 +62,31 @@ struct AppState {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    let system = System::new();
+
     let airlines = airlines::from_file(AIRLINES_FILE);
     let hotel = hotel::get_hotel_address(RATE_LIMITING_DEFAULT);
-    let statistics = StatsActor { sum_time: 0, destinations: HashMap::<String, i64>::new() }.start();
+    let statistics = StatsActor { sum_time: 0, destinations: HashMap::<String, i64>::new()};
+    let st_clone = statistics.clone();
+    let addr_statistics = statistics.start();
 
 
-    HttpServer::new(move || {
+    let a = HttpServer::new(move || {
         App::new()
             .data(AppState {
                 airlines: airlines.to_owned(),
                 hotel: hotel.to_owned(),
-                statistics: statistics.to_owned(),
+                statistics: addr_statistics.to_owned()
             })
             .service(reservation)
     })
     .bind(("127.0.0.1", 8080))?
     .run()
-    .await
+    .await;
+
+    st_clone.print_stat();
+    system.run().unwrap();
+    a
 }
 
 /// This documentation isn't showing anywhere on rustdoc :(
@@ -103,13 +112,6 @@ async fn reservation(req: web::Json<FlightReservation>, appstate: web::Data<AppS
     flightOk.await;
     hotelOk.await;
     addr_statistics.send(Stat {elapsed_time: start_time.elapsed().as_millis(), destination : flights_for_stats.get_route().to_string()}).await;
-    
-    //todo fin <3 
-    
-    // JFK
-
-    // rate_limiter(JFK +1)
-    // reservame (JFK)
     
     // appstate.statistics.send(Stat {name: String::from("aaaaa")}).await;
 

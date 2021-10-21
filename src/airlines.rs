@@ -9,7 +9,6 @@ use crate::utils::read_file;
 use std::collections::HashMap;
 use crate::flight_reservation::FlightReservation;
 use rand::{thread_rng, Rng};
-use crate::statsactor::{StatsActor, Stat};
 
 /// If the user doesn't set the ENVVAR `RETRY_SECONDS` we default to this value
 const DEFAULT_RETRY_SECONDS: u64 = 5;
@@ -40,7 +39,7 @@ impl Handler<InfoFlight> for Airline {
         };
     
         loop {
-            let _s = sleep(Duration::from_millis(thread_rng().gen_range(500, 1500)));
+            let s = sleep(Duration::from_millis(thread_rng().gen_range(500, 1500)));
             if !thread_rng().gen_bool(0.8) {
                 // Todo: send logger message
                 let s = format!("[{}] Flight Reservation: RETRY", msg.flight_reservation.get_route().to_string());
@@ -62,11 +61,8 @@ pub fn from_file(filename: &str) -> Airlines {
     let airlines = read_file(filename).unwrap();
     let mut airline_map = HashMap::<String, Addr<Airline>>::new();
     for airline in airlines {
-        let addr = SyncArbiter::start(airline[1].clone().parse::<usize>().unwrap(), || Airline {  });
-        airline_map.insert(
-            airline[0].clone(),
-            addr,
-        );
+        let airline_actor = SyncArbiter::start(airline[1].parse::<usize>().unwrap(), || Airline {});
+        airline_map.insert(airline[0].to_string(), airline_actor);
     }
     airline_map
 }
