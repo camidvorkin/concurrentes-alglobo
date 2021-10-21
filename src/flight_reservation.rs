@@ -1,6 +1,7 @@
 //! Flight Reservations Struct
 use serde::Deserialize;
 use std::string::ToString;
+use actix::Message;
 
 /// Struct
 ///
@@ -11,6 +12,10 @@ pub struct FlightReservation {
     pub destination: String,
     pub airline: String,
     pub hotel: bool,
+}
+
+impl Message for FlightReservation {
+    type Result = i32;
 }
 
 impl ToString for FlightReservation {
