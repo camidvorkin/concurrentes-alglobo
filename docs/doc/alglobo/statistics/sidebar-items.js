@@ -1,1 +1,0 @@
-initSidebarItems({"struct":[["Statistics","Entity that holds the statistics of the flights"]]});

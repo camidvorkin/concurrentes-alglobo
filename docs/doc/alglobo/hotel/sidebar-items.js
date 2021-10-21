@@ -1,0 +1,1 @@
+initSidebarItems({"fn":[["get_hotel_address",""]],"struct":[["Hotel","WebServer that represents the Hotel Actor"],["InfoPackage","Message to start the Hotel Actor with the package information"]]});

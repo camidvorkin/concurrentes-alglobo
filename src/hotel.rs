@@ -6,6 +6,7 @@ use rand::{thread_rng, Rng};
 use actix::clock::sleep;
 use std::time::Duration;
 
+/// Message to start the Hotel Actor with the package information
 pub struct InfoPackage {
     pub route: String,
 }
@@ -13,7 +14,8 @@ pub struct InfoPackage {
 impl Message for InfoPackage {
     type Result = i32;
 }
-    
+
+/// WebServer that represents the Hotel Actor
 pub struct Hotel { 
 }
 
@@ -21,6 +23,7 @@ impl Actor for Hotel {
     type Context = SyncContext<Self>; 
 }
 
+/// Hotel handles request for the package information arriving. All of the request are accepted.
 impl Handler<InfoPackage> for Hotel {
     type Result = i32;
 

@@ -13,6 +13,7 @@ use rand::{thread_rng, Rng};
 /// If the user doesn't set the ENVVAR `RETRY_SECONDS` we default to this value
 const DEFAULT_RETRY_SECONDS: u64 = 5;
 
+/// Message to start the actor with the flight information
 pub struct InfoFlight {
     pub flight_reservation: FlightReservation
 }
@@ -21,6 +22,7 @@ impl Message for InfoFlight {
     type Result = i32;
 }
 
+/// WebServer actor airline
 pub struct Airline { 
 }
 
@@ -28,6 +30,8 @@ impl Actor for Airline {
     type Context = SyncContext<Self>; 
 }
 
+/// Airline handle the request for the flight information.
+/// Not all the request are accepted at once. If the request is not accepted, the actor will retry `RETRY_SECONDS` seconds later.
 impl Handler<InfoFlight> for Airline {
     type Result = i32;
 
@@ -53,7 +57,7 @@ impl Handler<InfoFlight> for Airline {
         
 } 
 
-/// Keep track of how many threads can each airline handle
+/// Keep track of how many actors can each airline handle
 pub type Airlines = HashMap<String, Addr<Airline>>;
 
 /// Read from a CSV file with airlines and their max number of concurrent requests as columns and convert it into our Airlines type
