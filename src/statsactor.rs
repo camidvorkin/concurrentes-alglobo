@@ -1,5 +1,6 @@
 use actix::prelude::*;
 use std::collections::HashMap;
+use crate::logger;
 
 pub struct Stat {
     pub elapsed_time: u128,
@@ -10,14 +11,6 @@ pub struct Stat {
 pub struct StatsActor {
     pub sum_time: i64,
     pub destinations: HashMap<String, i64>,
-}
-
-pub struct XXX {
-    pub s: String,
-}
-
-impl Message for XXX {
-    type Result = ();
 }
 
 impl Message for Stat {
@@ -43,22 +36,14 @@ impl Handler<Stat> for StatsActor {
     type Result = ();
 
     fn handle(&mut self, msg: Stat, _: &mut Context<Self>) -> Self::Result {
+        logger::log(format!("New stat added! Request with route {}, was executed in {} millis", msg.destination, msg.elapsed_time));
         self.sum_time += msg.elapsed_time as i64;
         let sum_destinations = self
             .destinations
             .entry(msg.destination.clone())
             .or_insert(0);
-        *sum_destinations += msg.elapsed_time as i64;
-        println!("aaa");
+        *sum_destinations += 1;
         self.print_stat();
-    }
-}
-
-impl Handler<XXX> for StatsActor {
-    type Result = ();
-
-    fn handle(&mut self, msg: XXX, _: &mut Context<Self>) -> Self::Result {
-        println!("{}", msg.s);
     }
 }
 
@@ -88,11 +73,22 @@ impl StatsActor {
             "Operational Stats \n\
         * Completed Flights: {} \n\
         * Total Waiting Time: {} \n\
-        * Avg Response time: {:.2} \n",
+        * Avg Response time: {:.2} \n\
+        * Top 3: \n{} \n",
             self.get_total_count(),
             self.get_sum_time(),
-            self.get_avg_time()
+            self.get_avg_time(),
+            self.get_top_destinations_str(3)
         );
+    }
+
+    pub fn get_top_destinations_str(&self, n: usize) -> String {
+        let mut top_destinations = self.get_top_destinations(n);
+        let mut top_destinations_str = String::new();
+        for (k, v) in top_destinations.iter().take(n) {
+            top_destinations_str.push_str(&format!("\tFlight {}: {} \n", k, v));
+        }
+        top_destinations_str
     }
 
     pub fn get_top_destinations(&self, n: usize) -> Vec<(String, i64)> {
