@@ -3,6 +3,7 @@ extern crate actix;
 
 use crate::airlines::InfoFlight;
 use crate::logger;
+use crate::statsactor::Req;
 use actix::{Actor, Addr, Handler, Message, SyncArbiter, SyncContext};
 use rand::{thread_rng, Rng};
 use std::thread;
@@ -27,10 +28,13 @@ impl Handler<InfoFlight> for Hotel {
 
     fn handle(&mut self, msg: InfoFlight, _ctx: &mut <Hotel as Actor>::Context) -> Self::Result {
         if msg.flight_reservation.hotel {
-            logger::log(format!("Starting Request to Hotel: [{}]", msg.flight_reservation.get_route()));
+            // logger::log(format!("Starting Request to Hotel: [{}]", msg.flight_reservation.get_route()));
             // thread::sleep(Duration::from_millis(thread_rng().gen_range(500, 1500)));
             thread::sleep(Duration::from_secs(1));
-            logger::log(format!("Request to Hotel for route [{}]: SUCCESFUL", msg.flight_reservation.get_route()).to_string())
+            logger::log(format!("Request to Hotel for route [{}]: SUCCESFUL", msg.flight_reservation.id).to_string());
+            msg.addr_statistics.try_send(Req {
+                flight_reservation: msg.flight_reservation.clone(),
+            });
         }
     }
 }

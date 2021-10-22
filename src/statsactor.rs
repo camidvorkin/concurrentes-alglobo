@@ -1,6 +1,11 @@
 use actix::prelude::*;
 use std::collections::HashMap;
 use crate::logger;
+use crate::flight_reservation::FlightReservation;
+
+pub struct Req {
+    pub flight_reservation: FlightReservation,
+}
 
 pub struct Stat {
     pub elapsed_time: u128,
@@ -11,9 +16,14 @@ pub struct Stat {
 pub struct StatsActor {
     pub sum_time: i64,
     pub destinations: HashMap<String, i64>,
+    pub flights: HashMap<i32, i32>
 }
 
 impl Message for Stat {
+    type Result = ();
+}
+
+impl Message for Req {
     type Result = ();
 }
 
@@ -22,6 +32,7 @@ impl Clone for StatsActor {
         StatsActor {
             sum_time: self.sum_time,
             destinations: self.destinations.clone(),
+            flights: self.flights.clone()
         }
     }
 }
@@ -44,6 +55,22 @@ impl Handler<Stat> for StatsActor {
             .or_insert(0);
         *sum_destinations += 1;
         self.print_stat();
+    }
+}
+
+impl Handler<Req> for StatsActor {
+    type Result = ();
+
+    fn handle(&mut self, msg: Req, _: &mut Context<Self>) -> Self::Result {
+        let mut x = self.flights.entry(msg.flight_reservation.id).or_insert(0);
+        *x += 1;
+        if msg.flight_reservation.clone().hotel {
+            if *x == 2 {
+                logger::log(format!("{:?} ||| New stat added! Request with id {}, was executed in {} millis", self.flights, msg.flight_reservation.id, 1));
+                self.print_stat();
+            }
+        }
+        // cuando tengo ambos aca
     }
 }
 

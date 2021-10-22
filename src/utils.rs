@@ -22,13 +22,16 @@ pub fn read_file(filename: &str) -> Result<Vec<Vec<String>>, Box<dyn Error>> {
 pub fn process_flights(filename: &str) -> Vec<FlightReservation> {
     let flights_reservations = read_file(filename).unwrap();
     let mut flights = Vec::<FlightReservation>::new();
+    let mut i = 0;
     for flight in flights_reservations {
         flights.push(FlightReservation {
+            id: i,
             origin: flight[0].clone(),
             destination: flight[1].clone(),
             airline: flight[2].clone(),
             hotel: flight[3].clone() == IS_HOTEL,
         });
+        i += 1;
     }
     flights
 }

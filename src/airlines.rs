@@ -2,7 +2,7 @@
 extern crate actix;
 
 use crate::flight_reservation::FlightReservation;
-use crate::statsactor::StatsActor;
+use crate::statsactor::{StatsActor, Req};
 use crate::utils::read_file;
 use crate::logger;
 use actix::Message;
@@ -36,7 +36,7 @@ impl Handler<InfoFlight> for Airline {
     type Result = ();
 
     fn handle(&mut self, msg: InfoFlight, _ctx: &mut <Airline as Actor>::Context) -> Self::Result {
-        logger::log(format!("Starting Request to Airline {} for route: [{}]", msg.flight_reservation.airline, msg.flight_reservation.get_route()));
+        // logger::log(format!("Starting Request to Airline {} for route: [{}]", msg.flight_reservation.airline, msg.flight_reservation.get_route()));
         let _retry_seconds = match env::var("RETRY_SECONDS") {
             Ok(val) => val.parse::<u64>().unwrap(),
             Err(_) => DEFAULT_RETRY_SECONDS,
@@ -44,10 +44,13 @@ impl Handler<InfoFlight> for Airline {
         loop {
             // thread::sleep(Duration::from_millis(thread_rng().gen_range(500, 1500)));
             thread::sleep(Duration::from_secs(1));
-            let retry = thread_rng().gen_bool(0.4);
-            logger::log(format!("Request to {} for route [{}]: {}", msg.flight_reservation.airline, msg.flight_reservation.get_route(), if retry { "RETRY" } else { "SUCCESFUL" }).to_string());
+            let retry = false; //thread_rng().gen_bool(0.4);
+            logger::log(format!("Request to {} for route [{}]: {}", msg.flight_reservation.airline, msg.flight_reservation.id, if retry { "RETRY" } else { "SUCCESFUL" }).to_string());
         
             if !retry {
+                msg.addr_statistics.try_send(Req {
+                    flight_reservation: msg.flight_reservation,
+                });
                 break; 
             }
             // thread::sleep(Duration::from_millis(thread_rng().gen_range(1000, 2000)));

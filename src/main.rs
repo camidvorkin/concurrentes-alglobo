@@ -12,11 +12,12 @@ use airlines::{Airline, InfoFlight};
 use hotel::Hotel;
 use statsactor::{Stat, StatsActor};
 use std::collections::HashMap;
+use flight_reservation::FlightReservation;
 
 use utils::process_flights;
 
 const AIRLINES_FILE: &str = "src/configs/airlines.txt";
-const RATE_LIMITING_DEFAULT: usize = 5;
+const RATE_LIMITING_DEFAULT: usize = 1;
 
 #[actix_rt::main]
 async fn main() {
@@ -28,14 +29,14 @@ async fn main() {
     let addr_statistics = StatsActor {
         sum_time: 0,
         destinations: HashMap::<String, i64>::new(),
+        flights: HashMap::<i32, i32>::new(),
     }
     .start();
     
     let mut flights = process_flights("flights.txt");
-    let mut flights_for_stats = flights.clone();
-
+    
     // Create vector of int tuples
-    let mut flight_reservations: Vec<(Request<Airline, InfoFlight>, Option<Request<Hotel, InfoFlight>>, std::time::Instant)> = Vec::new();
+    let mut flight_reservations: Vec<(FlightReservation, Request<Airline, InfoFlight>, Option<Request<Hotel, InfoFlight>>, std::time::Instant)> = Vec::new();
 
     for flight_reservation in flights {
         let start_time = std::time::Instant::now();
@@ -53,20 +54,20 @@ async fn main() {
             }));
         }
         
-        flight_reservations.push((flight_res, hotel_res, start_time));    
+        flight_reservations.push((flight_reservation, flight_res, hotel_res, start_time));    
     }
 
-    for (flight, hotel, start_time) in flight_reservations {
-        let flights_for_stats = flights_for_stats.pop().unwrap();
+
+
+    for (flight_reservation, flight, hotel, start_time) in flight_reservations {
         let flight = flight.await;
         
-        // If Option is not None    
         if let Some(hotel) = hotel {
             let hotel = hotel.await;
         }
-        addr_statistics.send(Stat {
-            elapsed_time: start_time.elapsed().as_millis(),
-            destination: flights_for_stats.get_route()
-        }).await;
+        // addr_statistics.send(Stat {
+        //     elapsed_time: start_time.elapsed().as_millis(),
+        //     destination: flight_reservation.get_route()
+        // }).await;
     }
 }
