@@ -2,22 +2,22 @@
 mod airlines;
 mod flight_reservation;
 mod hotel;
+mod logger;
 mod statsactor;
 mod utils;
-mod logger;
 use actix::prelude::*;
 
 use airlines::{Airline, InfoFlight};
 
+use flight_reservation::FlightReservation;
 use hotel::Hotel;
 use statsactor::{Stat, StatsActor};
 use std::collections::HashMap;
-use flight_reservation::FlightReservation;
 
 use utils::process_flights;
 
 const AIRLINES_FILE: &str = "src/configs/airlines.txt";
-const RATE_LIMITING_DEFAULT: usize = 1;
+const RATE_LIMITING_DEFAULT: usize = 2;
 
 #[actix_rt::main]
 async fn main() {
@@ -32,11 +32,15 @@ async fn main() {
         flights: HashMap::<i32, i32>::new(),
     }
     .start();
-    
+
     let mut flights = process_flights("flights.txt");
-    
-    // Create vector of int tuples
-    let mut flight_reservations: Vec<(FlightReservation, Request<Airline, InfoFlight>, Option<Request<Hotel, InfoFlight>>, std::time::Instant)> = Vec::new();
+
+    let mut flight_reservations: Vec<(
+        FlightReservation,
+        Request<Airline, InfoFlight>,
+        Option<Request<Hotel, InfoFlight>>,
+        std::time::Instant,
+    )> = Vec::new();
 
     for flight_reservation in flights {
         let start_time = std::time::Instant::now();
@@ -44,30 +48,25 @@ async fn main() {
         let flight_res = addr_airline.send(InfoFlight {
             flight_reservation: flight_reservation.clone(),
             addr_statistics: addr_statistics.clone(),
+            start_time: start_time.clone(),
         });
-        
+
         let mut hotel_res = Option::None;
         if flight_reservation.hotel {
             hotel_res = Option::Some(addr_hotel.send(InfoFlight {
                 flight_reservation: flight_reservation.clone(),
                 addr_statistics: addr_statistics.clone(),
+                start_time: start_time.clone(),
             }));
         }
-        
-        flight_reservations.push((flight_reservation, flight_res, hotel_res, start_time));    
+        flight_reservations.push((flight_reservation, flight_res, hotel_res, start_time));
     }
-
-
 
     for (flight_reservation, flight, hotel, start_time) in flight_reservations {
         let flight = flight.await;
-        
+
         if let Some(hotel) = hotel {
             let hotel = hotel.await;
         }
-        // addr_statistics.send(Stat {
-        //     elapsed_time: start_time.elapsed().as_millis(),
-        //     destination: flight_reservation.get_route()
-        // }).await;
     }
 }

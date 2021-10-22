@@ -3,7 +3,7 @@ extern crate actix;
 
 use crate::airlines::InfoFlight;
 use crate::logger;
-use crate::statsactor::Req;
+use crate::statsactor::Stat;
 use actix::{Actor, Addr, Handler, Message, SyncArbiter, SyncContext};
 use rand::{thread_rng, Rng};
 use std::thread;
@@ -30,16 +30,29 @@ impl Handler<InfoFlight> for Hotel {
         if msg.flight_reservation.hotel {
             // logger::log(format!("Starting Request to Hotel: [{}]", msg.flight_reservation.get_route()));
             // thread::sleep(Duration::from_millis(thread_rng().gen_range(500, 1500)));
-            thread::sleep(Duration::from_secs(1));
-            logger::log(format!("Request to Hotel for route [{}]: SUCCESFUL", msg.flight_reservation.id).to_string());
-            msg.addr_statistics.try_send(Req {
+            thread::sleep(Duration::from_secs(2));
+            msg.addr_statistics.try_send(Stat {
+                elapsed_time: msg.start_time.elapsed().as_millis(),
                 flight_reservation: msg.flight_reservation.clone(),
             });
+            logger::log(
+                format!(
+                    "Request to Hotel for route [{}]: SUCCESFUL",
+                    msg.flight_reservation.id
+                )
+                .to_string(),
+            );
         }
     }
 }
 
 pub fn get_hotel_address(rate_limite: usize) -> Addr<Hotel> {
-    logger::log(format!("Creating Hotel Server with their rate limite {}", rate_limite).to_string());
+    logger::log(
+        format!(
+            "Creating Hotel Server with their rate limite {}",
+            rate_limite
+        )
+        .to_string(),
+    );
     SyncArbiter::start(rate_limite, || Hotel {})
 }

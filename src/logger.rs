@@ -18,7 +18,7 @@ pub fn log(msg: String) {
         .open(FILENAME)
         .expect("Unable to open log file");
     let msg = format!("[{}] - {} \n", chrono::Local::now(), msg);
-    
+
     // Print to console
     print!("{}", msg);
 
