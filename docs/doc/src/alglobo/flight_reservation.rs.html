@@ -46,17 +46,20 @@
 <span id="46">46</span>
 <span id="47">47</span>
 <span id="48">48</span>
+<span id="49">49</span>
+<span id="50">50</span>
 </pre><pre class="rust">
 <span class="doccomment">//! Flight Reservations Struct</span>
+<span class="kw">use</span> <span class="ident">actix::Message</span>;
 <span class="kw">use</span> <span class="ident">serde::Deserialize</span>;
 <span class="kw">use</span> <span class="ident">std::string::ToString</span>;
-<span class="kw">use</span> <span class="ident">actix::Message</span>;
 
 <span class="doccomment">/// Struct</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// This struct can be deserialized from a JSON (thanks to serde), making it easier to use, because we now can receive it from the web request in a JSON form</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">FlightReservation</span> {
+    <span class="kw">pub</span> <span class="ident">id</span>: <span class="ident">i32</span>,
     <span class="kw">pub</span> <span class="ident">origin</span>: <span class="ident">String</span>,
     <span class="kw">pub</span> <span class="ident">destination</span>: <span class="ident">String</span>,
     <span class="kw">pub</span> <span class="ident">airline</span>: <span class="ident">String</span>,
@@ -82,6 +85,7 @@
 <span class="kw">impl</span> <span class="ident">Clone</span> <span class="kw">for</span> <span class="ident">FlightReservation</span> {
     <span class="kw">fn</span> <span class="ident">clone</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="ident">FlightReservation</span> {
+            <span class="ident">id</span>: <span class="self">self</span>.<span class="ident">id</span>,
             <span class="ident">origin</span>: <span class="self">self</span>.<span class="ident">origin</span>.<span class="ident">clone</span>(),
             <span class="ident">destination</span>: <span class="self">self</span>.<span class="ident">destination</span>.<span class="ident">clone</span>(),
             <span class="ident">airline</span>: <span class="self">self</span>.<span class="ident">airline</span>.<span class="ident">clone</span>(),
