@@ -38,46 +38,90 @@
 <span id="38">38</span>
 <span id="39">39</span>
 <span id="40">40</span>
+<span id="41">41</span>
+<span id="42">42</span>
+<span id="43">43</span>
+<span id="44">44</span>
+<span id="45">45</span>
+<span id="46">46</span>
+<span id="47">47</span>
+<span id="48">48</span>
+<span id="49">49</span>
+<span id="50">50</span>
+<span id="51">51</span>
+<span id="52">52</span>
+<span id="53">53</span>
+<span id="54">54</span>
+<span id="55">55</span>
+<span id="56">56</span>
+<span id="57">57</span>
+<span id="58">58</span>
+<span id="59">59</span>
+<span id="60">60</span>
+<span id="61">61</span>
+<span id="62">62</span>
 </pre><pre class="rust">
 <span class="doccomment">//! Handle airlines config</span>
 <span class="kw">extern</span> <span class="kw">crate</span> <span class="ident">actix</span>;
 
-<span class="kw">use</span> <span class="ident">actix</span>::{<span class="ident">Actor</span>, <span class="ident">SyncContext</span>, <span class="ident">Handler</span>, <span class="ident">Message</span>, <span class="ident">Addr</span>, <span class="ident">SyncArbiter</span>};
+<span class="kw">use</span> <span class="kw">crate</span><span class="ident">::flight::InfoFlight</span>;
+<span class="kw">use</span> <span class="kw">crate</span><span class="ident">::logger</span>;
+<span class="kw">use</span> <span class="kw">crate</span><span class="ident">::statsactor::Stat</span>;
+<span class="kw">use</span> <span class="ident">actix</span>::{<span class="ident">Actor</span>, <span class="ident">Addr</span>, <span class="ident">Handler</span>, <span class="ident">SyncArbiter</span>, <span class="ident">SyncContext</span>};
 <span class="kw">use</span> <span class="ident">rand</span>::{<span class="ident">thread_rng</span>, <span class="ident">Rng</span>};
-<span class="kw">use</span> <span class="ident">actix::clock::sleep</span>;
+<span class="kw">use</span> <span class="ident">std::thread</span>;
 <span class="kw">use</span> <span class="ident">std::time::Duration</span>;
 
-<span class="doccomment">/// Message to start the Hotel Actor with the package information</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">InfoPackage</span> {
-    <span class="kw">pub</span> <span class="ident">route</span>: <span class="ident">String</span>,
-}
-
-<span class="kw">impl</span> <span class="ident">Message</span> <span class="kw">for</span> <span class="ident">InfoPackage</span> {
-    <span class="kw">type</span> <span class="prelude-ty">Result</span> <span class="op">=</span> <span class="ident">i32</span>;
-}
-
-<span class="doccomment">/// WebServer that represents the Hotel Actor</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Hotel</span> { 
-}
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Hotel</span> {}
 
 <span class="kw">impl</span> <span class="ident">Actor</span> <span class="kw">for</span> <span class="ident">Hotel</span> {
-    <span class="kw">type</span> <span class="ident">Context</span> <span class="op">=</span> <span class="ident">SyncContext</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span>; 
+    <span class="kw">type</span> <span class="ident">Context</span> <span class="op">=</span> <span class="ident">SyncContext</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span>;
 }
 
-<span class="doccomment">/// Hotel handles request for the package information arriving. All of the request are accepted.</span>
-<span class="kw">impl</span> <span class="ident">Handler</span><span class="op">&lt;</span><span class="ident">InfoPackage</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Hotel</span> {
-    <span class="kw">type</span> <span class="prelude-ty">Result</span> <span class="op">=</span> <span class="ident">i32</span>;
+<span class="kw">impl</span> <span class="ident">Handler</span><span class="op">&lt;</span><span class="ident">InfoFlight</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Hotel</span> {
+    <span class="kw">type</span> <span class="prelude-ty">Result</span> <span class="op">=</span> ();
 
-    <span class="kw">fn</span> <span class="ident">handle</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">msg</span>: <span class="ident">InfoPackage</span>, <span class="ident">_ctx</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="op">&lt;</span><span class="ident">Hotel</span> <span class="kw">as</span> <span class="ident">Actor</span><span class="op">&gt;</span><span class="ident">::Context</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span><span class="ident">::Result</span> {
-        <span class="ident">sleep</span>(<span class="ident">Duration::from_millis</span>(<span class="ident">thread_rng</span>().<span class="ident">gen_range</span>(<span class="number">500</span>, <span class="number">1500</span>)));
-        <span class="macro">println!</span>(<span class="string">&quot;[{}] Hotel reservation: SUCESSFUL&quot;</span>, <span class="ident">msg</span>.<span class="ident">route</span>.<span class="ident">to_string</span>());
-        <span class="number">0</span>
+    <span class="doccomment">/// Handle the message of InfoFlight and simulates to send it to the Hotel server if the request includes the whole package experience.</span>
+    <span class="doccomment">/// The server is always available so the request is always successful.</span>
+    <span class="kw">fn</span> <span class="ident">handle</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">msg</span>: <span class="ident">InfoFlight</span>, <span class="ident">_ctx</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="op">&lt;</span><span class="ident">Hotel</span> <span class="kw">as</span> <span class="ident">Actor</span><span class="op">&gt;</span><span class="ident">::Context</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span><span class="ident">::Result</span> {
+        <span class="kw">if</span> <span class="ident">msg</span>.<span class="ident">flight_reservation</span>.<span class="ident">hotel</span> {
+            <span class="ident">logger::log</span>(<span class="macro">format!</span>(
+                <span class="string">&quot;Starting Request to Hotel: [{}]&quot;</span>,
+                <span class="ident">msg</span>.<span class="ident">flight_reservation</span>.<span class="ident">get_route</span>()
+            ));
+            <span class="ident">thread::sleep</span>(<span class="ident">Duration::from_millis</span>(<span class="ident">thread_rng</span>().<span class="ident">gen_range</span>(<span class="number">500</span>, <span class="number">1500</span>)));
+            <span class="comment">// thread::sleep(Duration::from_secs(2));</span>
+            <span class="kw">match</span> <span class="ident">msg</span>.<span class="ident">addr_statistics</span>.<span class="ident">try_send</span>(<span class="ident">Stat</span> {
+                <span class="ident">elapsed_time</span>: <span class="ident">msg</span>.<span class="ident">start_time</span>.<span class="ident">elapsed</span>().<span class="ident">as_millis</span>(),
+                <span class="ident">flight_reservation</span>: <span class="ident">msg</span>.<span class="ident">flight_reservation</span>.<span class="ident">clone</span>(),
+            }) {
+                <span class="prelude-val">Ok</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {}
+                <span class="prelude-val">Err</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                    <span class="ident">logger::log</span>(<span class="string">&quot;Request FAILED&quot;</span>.<span class="ident">to_string</span>());
+                }
+            };
+            <span class="ident">logger::log</span>(
+                <span class="macro">format!</span>(
+                    <span class="string">&quot;Request to Hotel for route [{}]: SUCCESFUL&quot;</span>,
+                    <span class="ident">msg</span>.<span class="ident">flight_reservation</span>.<span class="ident">id</span>
+                )
+                .<span class="ident">to_string</span>(),
+            );
+        }
     }
-        
-} 
+}
 
+<span class="doccomment">/// Creates one Hotel Server which allows `rate_limite` amount of requests at the same time.</span>
+<span class="doccomment">/// Returns the `Addr` of the created servers.</span>
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_hotel_address</span>(<span class="ident">rate_limite</span>: <span class="ident">usize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Addr</span><span class="op">&lt;</span><span class="ident">Hotel</span><span class="op">&gt;</span> {
-    <span class="ident">SyncArbiter::start</span>(<span class="ident">rate_limite</span>, <span class="op">|</span><span class="op">|</span> <span class="ident">Hotel</span> {} )
+    <span class="ident">logger::log</span>(
+        <span class="macro">format!</span>(
+            <span class="string">&quot;Creating Hotel Server with their rate limite {}&quot;</span>,
+            <span class="ident">rate_limite</span>
+        )
+        .<span class="ident">to_string</span>(),
+    );
+    <span class="ident">SyncArbiter::start</span>(<span class="ident">rate_limite</span>, <span class="op">|</span><span class="op">|</span> <span class="ident">Hotel</span> {})
 }
 </pre></div>
 </section><section id="search" class="content hidden"></section><div id="rustdoc-vars" data-root-path="../../" data-current-crate="alglobo" data-search-index-js="../../search-index.js" data-search-js="../../search.js"></div>

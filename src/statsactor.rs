@@ -38,13 +38,14 @@ impl Handler<Stat> for StatsActor {
     type Result = ();
 
     fn handle(&mut self, msg: Stat, _: &mut Context<Self>) -> Self::Result {
-        let mut x = self.flights.entry(msg.flight_reservation.id).or_insert(0);
+        let x = self.flights.entry(msg.flight_reservation.id).or_insert(0);
         *x += 1;
         if (msg.flight_reservation.clone().hotel && *x == 2)
             || (!msg.flight_reservation.clone().hotel && *x == 1)
         {
             self.add_stat(msg.elapsed_time, msg.flight_reservation.get_route());
             self.print_stat();
+            self.flights.remove(&msg.flight_reservation.id);
         }
     }
 }
@@ -85,7 +86,7 @@ impl StatsActor {
     }
 
     pub fn get_top_destinations_str(&self, n: usize) -> String {
-        let mut top_destinations = self.get_top_destinations(n);
+        let top_destinations = self.get_top_destinations(n);
         let mut top_destinations_str = String::new();
         for (k, v) in top_destinations.iter().take(n) {
             top_destinations_str.push_str(&format!("\tFlight {}: {} \n", k, v));

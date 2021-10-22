@@ -1,1 +1,1 @@
-initSidebarItems({"fn":[["get_hotel_address",""]],"struct":[["Hotel","WebServer that represents the Hotel Actor"],["InfoPackage","Message to start the Hotel Actor with the package information"]]});
+initSidebarItems({"fn":[["get_hotel_address","Creates one Hotel Server which allows `rate_limite` amount of requests at the same time. Returns the `Addr` of the created servers."]],"struct":[["Hotel",""]]});
