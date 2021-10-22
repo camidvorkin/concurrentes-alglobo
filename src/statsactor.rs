@@ -3,13 +3,21 @@ use std::collections::HashMap;
 
 pub struct Stat {
     pub elapsed_time: u128,
-    pub destination: String
+    pub destination: String,
 }
 
 /// Actor
 pub struct StatsActor {
     pub sum_time: i64,
     pub destinations: HashMap<String, i64>,
+}
+
+pub struct XXX {
+    pub s: String,
+}
+
+impl Message for XXX {
+    type Result = ();
 }
 
 impl Message for Stat {
@@ -36,10 +44,22 @@ impl Handler<Stat> for StatsActor {
 
     fn handle(&mut self, msg: Stat, _: &mut Context<Self>) -> Self::Result {
         self.sum_time += msg.elapsed_time as i64;
-        let mut sum_destinations = self.destinations.entry(msg.destination.clone()).or_insert(0);
+        let sum_destinations = self
+            .destinations
+            .entry(msg.destination.clone())
+            .or_insert(0);
         *sum_destinations += msg.elapsed_time as i64;
+        println!("aaa");
+        self.print_stat();
     }
+}
 
+impl Handler<XXX> for StatsActor {
+    type Result = ();
+
+    fn handle(&mut self, msg: XXX, _: &mut Context<Self>) -> Self::Result {
+        println!("{}", msg.s);
+    }
 }
 
 impl StatsActor {
@@ -63,15 +83,21 @@ impl StatsActor {
         (self.sum_time / count) as f64
     }
 
-    pub fn print_stat(&self)  {
-        print!("Operational Stats \n\
+    pub fn print_stat(&self) {
+        print!(
+            "Operational Stats \n\
         * Completed Flights: {} \n\
         * Total Waiting Time: {} \n\
-        * Avg Response time: {:.2} \n", self.get_total_count(), self.get_sum_time(), self.get_avg_time());
+        * Avg Response time: {:.2} \n",
+            self.get_total_count(),
+            self.get_sum_time(),
+            self.get_avg_time()
+        );
     }
 
     pub fn get_top_destinations(&self, n: usize) -> Vec<(String, i64)> {
-        let mut top_destinations = self.destinations
+        let mut top_destinations = self
+            .destinations
             .iter()
             .map(|(k, v)| (k.clone(), *v))
             .collect::<Vec<(String, i64)>>();

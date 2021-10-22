@@ -1,4 +1,4 @@
 AA,1
-UA,1
-DL,1
-LATAM,1
+UA,3
+DL,3
+LATAM,3

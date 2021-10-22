@@ -1,7 +1,7 @@
 //! Flight Reservations Struct
+use actix::Message;
 use serde::Deserialize;
 use std::string::ToString;
-use actix::Message;
 
 /// Struct
 ///
