@@ -19,6 +19,7 @@ pub fn read_file(filename: &str) -> Result<Vec<Vec<String>>, Box<dyn Error>> {
     Ok(result)
 }
 
+/// Read CSV file with all the flights requests and return a vector of every FlightReservation
 pub fn process_flights(filename: &str) -> Vec<FlightReservation> {
     let flights_reservations = read_file(filename).unwrap();
     let mut flights = Vec::<FlightReservation>::new();

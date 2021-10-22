@@ -5,7 +5,7 @@ use std::io::Write;
 const FILENAME: &str = "output/log.log";
 
 pub fn log_init() {
-    let mut file = OpenOptions::new()
+    OpenOptions::new()
         .write(true)
         .truncate(true)
         .open(FILENAME)
