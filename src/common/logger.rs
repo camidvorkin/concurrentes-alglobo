@@ -19,6 +19,6 @@ pub fn log(msg: String) {
         .expect("Unable to open log file");
     println!("{}", msg);
     let msg = format!("{} | {} \n", chrono::Local::now(), msg);
-    file.write_all(msg.to_string().as_bytes())
+    file.write_all(msg.as_bytes())
         .expect("Unable to write data");
 }

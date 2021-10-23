@@ -38,7 +38,7 @@ impl Handler<InfoFlight> for Airline {
         ));
 
         while let Err(_) = simulate_airline() {
-            logger::log(format!("Request to airline faileddd").to_string());
+            logger::log(format!("Request to airline faileddd"));
             thread::sleep(Duration::from_secs(retry_seconds));
         }
 
@@ -65,14 +65,10 @@ pub fn from_file(
     let mut airline_map = HashMap::<String, Addr<Airline>>::new();
     for airline in airlines {
         let addr_statistics_airline = addr_statistics.clone();
-        logger::log(
-            format!(
-                "Creating Airline Server for {} with rate limite {}",
-                airline[0].to_string(),
-                airline[1].to_string()
-            )
-            .to_string(),
-        );
+        logger::log(format!(
+            "Creating Airline Server for {} with rate limite {}",
+            airline[0], airline[1]
+        ));
         let airline_actor = SyncArbiter::start(
             airline[1].parse::<usize>().expect("Couldn't parse airline"),
             move || Airline {

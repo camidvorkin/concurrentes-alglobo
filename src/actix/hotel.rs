@@ -32,7 +32,7 @@ impl Handler<InfoFlight> for Hotel {
             msg.flight_reservation.get_route()
         ));
         while let Err(_) = simulate_hotel() {
-            logger::log(format!("Request hhotel faileddd",).to_string());
+            logger::log(format!("Request hhotel faileddd",));
             thread::sleep(Duration::from_secs(retry_seconds));
         }
         match self.addr_statistics.try_send(Stat {
@@ -44,12 +44,9 @@ impl Handler<InfoFlight> for Hotel {
                 logger::log("StatsActor failed to receive message".to_string());
             }
         };
-        logger::log(
-            format!(
-                "Request to Hotel for route [{}]: SUCCESFUL",
-                msg.flight_reservation.id
-            )
-            .to_string(),
-        );
+        logger::log(format!(
+            "Request to Hotel for route [{}]: SUCCESFUL",
+            msg.flight_reservation.id
+        ));
     }
 }
