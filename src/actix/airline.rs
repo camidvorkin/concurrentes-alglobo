@@ -61,7 +61,7 @@ pub fn from_file(
     filename: &str,
     addr_statistics: Addr<StatsActor>,
 ) -> HashMap<String, Addr<Airline>> {
-    let airlines = read_file(filename).unwrap();
+    let airlines = read_file(filename).expect("Couldn't read airline file");
     let mut airline_map = HashMap::<String, Addr<Airline>>::new();
     for airline in airlines {
         let addr_statistics_airline = addr_statistics.clone();
@@ -73,10 +73,12 @@ pub fn from_file(
             )
             .to_string(),
         );
-        let airline_actor =
-            SyncArbiter::start(airline[1].parse::<usize>().unwrap(), move || Airline {
+        let airline_actor = SyncArbiter::start(
+            airline[1].parse::<usize>().expect("Couldn't parse airline"),
+            move || Airline {
                 addr_statistics: addr_statistics_airline.to_owned(),
-            });
+            },
+        );
         airline_map.insert(airline[0].to_string(), airline_actor);
     }
     airline_map

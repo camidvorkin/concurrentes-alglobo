@@ -22,7 +22,9 @@ pub const DEFAULT_RETRY_SECONDS: u64 = 5;
 
 pub fn get_retry_seconds() -> u64 {
     match env::var("RETRY_SECONDS") {
-        Ok(val) => val.parse::<u64>().unwrap(),
+        Ok(val) => val
+            .parse::<u64>()
+            .expect("Couldn't parse RETRY_SECONDS env var"),
         Err(_) => DEFAULT_RETRY_SECONDS,
     }
 }
