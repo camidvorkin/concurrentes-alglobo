@@ -5,9 +5,9 @@ use std::collections::HashMap;
 pub const STATS_FREQUENCY: i64 = 5;
 
 pub struct StatsActor {
-    pub sum_time: i64,
-    pub destinations: HashMap<String, i64>,
-    pub flights: HashMap<i32, i32>,
+    sum_time: i64,
+    destinations: HashMap<String, i64>,
+    flights: HashMap<i32, i32>,
 }
 
 impl Actor for StatsActor {
@@ -15,6 +15,14 @@ impl Actor for StatsActor {
 }
 
 impl StatsActor {
+    pub fn new() -> StatsActor {
+        StatsActor {
+            sum_time: 0,
+            destinations: HashMap::<String, i64>::new(),
+            flights: HashMap::<i32, i32>::new(),
+        }
+    }
+
     fn get_total_count(&self) -> i64 {
         let mut count = 0;
         for (_k, v) in self.destinations.iter() {

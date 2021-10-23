@@ -25,12 +25,7 @@ async fn main() {
     };
     let flights = flight_reservation::from_file(&flights_file);
 
-    let addr_statistics = StatsActor {
-        sum_time: 0,
-        destinations: HashMap::<String, i64>::new(),
-        flights: HashMap::<i32, i32>::new(),
-    }
-    .start();
+    let addr_statistics = StatsActor::new().start();
     let addr_statistics_hotel = addr_statistics.clone();
     let addr_statistics_airline = addr_statistics.clone();
 
