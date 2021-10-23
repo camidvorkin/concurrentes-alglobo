@@ -37,10 +37,9 @@ async fn main() {
     });
 
     // Vector of futures to wait for the end of the process
-    let mut responses: Vec<(
-        Request<Airline, InfoFlight>,
-        Option<Request<Hotel, InfoFlight>>,
-    )> = Vec::new();
+    type AirlineReq = Request<Airline, InfoFlight>;
+    type HotelReq = Request<Hotel, InfoFlight>;
+    let mut responses: Vec<(AirlineReq, Option<HotelReq>)> = Vec::new();
 
     for flight_reservation in flights {
         let start_time = std::time::Instant::now();

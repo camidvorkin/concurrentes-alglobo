@@ -28,7 +28,7 @@ impl Handler<InfoFlight> for Hotel {
     fn handle(&mut self, msg: InfoFlight, _ctx: &mut Self::Context) -> Self::Result {
         let retry_seconds = get_retry_seconds();
 
-        while let Err(_) = simulate_hotel() {
+        while simulate_hotel().is_err() {
             logger::log(
                 format!("{} | HOTEL REQUEST   | RETRY", msg.flight_reservation),
                 LogLevel::INFO,
@@ -42,7 +42,7 @@ impl Handler<InfoFlight> for Hotel {
 
         let _ = self.addr_statistics.try_send(Stat {
             elapsed_time: msg.start_time.elapsed().as_millis(),
-            flight_reservation: msg.flight_reservation.clone(),
+            flight_reservation: msg.flight_reservation,
         });
     }
 }

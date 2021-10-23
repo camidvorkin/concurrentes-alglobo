@@ -1,7 +1,7 @@
 //! Make the reservations
 use crate::statistics::Statistics;
 use common::flight_reservation::FlightReservation;
-use common::logger::LogLevel;
+use common::logger::{LogLevel, LoggerMsg};
 use common::simulate_requests::{simulate_airline, simulate_hotel};
 use common::utils::get_retry_seconds;
 
@@ -15,11 +15,11 @@ use std_semaphore::Semaphore;
 fn send_to_hotel(
     flight: FlightReservation,
     barrier: Arc<Barrier>,
-    logger_sender: Sender<(String, LogLevel)>,
+    logger_sender: Sender<LoggerMsg>,
 ) {
     let retry_seconds = get_retry_seconds();
 
-    while let Err(_) = simulate_hotel() {
+    while simulate_hotel().is_err() {
         logger_sender
             .send((
                 format!("{} | HOTEL REQUEST   | RETRY", flight),
@@ -42,11 +42,11 @@ fn send_to_airline(
     flight: FlightReservation,
     sem: Arc<Semaphore>,
     barrier: Arc<Barrier>,
-    logger_sender: Sender<(String, LogLevel)>,
+    logger_sender: Sender<LoggerMsg>,
 ) {
     let retry_seconds = get_retry_seconds();
 
-    while let Err(_) = simulate_airline() {
+    while simulate_airline().is_err() {
         logger_sender
             .send((
                 format!("{} | AIRLINE REQUEST | RETRY", flight),
@@ -71,7 +71,7 @@ pub fn reserve(
     flight_reservation: FlightReservation,
     rate_limit: Arc<Semaphore>,
     mut statistics: Statistics,
-    logger_sender: Sender<(String, LogLevel)>,
+    logger_sender: Sender<LoggerMsg>,
 ) {
     let start_time = std::time::Instant::now();
 

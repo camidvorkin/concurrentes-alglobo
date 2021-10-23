@@ -8,6 +8,8 @@ pub enum LogLevel {
     INFO,
 }
 
+pub type LoggerMsg = (String, LogLevel);
+
 pub fn init() {
     OpenOptions::new()
         .create(true)

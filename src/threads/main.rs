@@ -35,8 +35,8 @@ use common::flight_reservation::FlightReservation;
 mod statistics;
 use actix_web::{post, web, App, HttpResponse, HttpServer};
 use airlines::Airlines;
-use common::logger;
 use common::logger::LogLevel;
+use common::logger::{self, LoggerMsg};
 use common::AIRLINES_FILE;
 use statistics::Statistics;
 
@@ -48,16 +48,14 @@ use keyboard::keyboard_listener;
 struct AppState {
     airlines: Airlines,
     statistics: Statistics,
-    logger_sender: Sender<(String, LogLevel)>,
+    logger_sender: Sender<LoggerMsg>,
 }
 
 /// The main function. It starts a thread for the keyboard listener, and it starts the actix-web server
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    let (logger_sender, logger_receiver): (
-        Sender<(String, LogLevel)>,
-        Receiver<(String, LogLevel)>,
-    ) = mpsc::channel();
+    let (logger_sender, logger_receiver): (Sender<LoggerMsg>, Receiver<LoggerMsg>) =
+        mpsc::channel();
 
     thread::Builder::new()
         .name("logger".to_string())
@@ -117,8 +115,7 @@ fn reservation(req: web::Json<FlightReservation>, appstate: web::Data<AppState>)
                 ))
                 .expect("Logger mpsc not receving messages");
 
-            return HttpResponse::NotAcceptable()
-                .body("Airline not present on server configuration");
+            HttpResponse::NotAcceptable().body("Airline not present on server configuration")
         }
         Some(semaphore) => {
             appstate
