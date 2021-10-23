@@ -50,6 +50,22 @@ impl Handler<Stat> for StatsActor {
     }
 }
 
+pub struct XXX {
+    pub s: String,
+}
+
+impl Message for XXX {
+    type Result = ();
+}
+
+impl Handler<XXX> for StatsActor {
+    type Result = ();
+
+    fn handle(&mut self, msg: XXX, _: &mut Context<Self>) -> Self::Result {
+        println!("{}", msg.s)
+    }
+}
+
 impl StatsActor {
     pub fn get_total_count(&self) -> i64 {
         let mut count = 0;

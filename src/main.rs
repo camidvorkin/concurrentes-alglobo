@@ -11,7 +11,7 @@ use actix::prelude::*;
 use airlines::Airline;
 use flight::InfoFlight;
 use hotel::Hotel;
-use statsactor::StatsActor;
+use statsactor::{StatsActor, XXX};
 use std::collections::HashMap;
 
 use utils::process_flights;
@@ -70,6 +70,12 @@ async fn main() {
             let _hotel = hotel.await;
         }
     }
+
+    let _x = addr_statistics
+        .send(XXX {
+            s: "Termine".to_string(),
+        })
+        .await;
 
     // TODO: Si el ultimo vuelo llega mucho mas tarde que el hotel o viseversa, no se imprime el ultimo stat
     // Hay que encontrar la manera de esperar los try_send
