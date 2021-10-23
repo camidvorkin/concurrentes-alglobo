@@ -82,7 +82,7 @@ pub fn reserve(
     let barrier_airline = barrier.clone();
 
     let logger_sender_hotel = logger_sender.clone();
-    let logger_sender_airline = logger_sender;
+    let logger_sender_airline = logger_sender.clone();
 
     rate_limit.acquire();
 

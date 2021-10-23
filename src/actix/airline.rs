@@ -44,7 +44,7 @@ impl Handler<InfoFlight> for Airline {
 
         match self.addr_statistics.try_send(Stat {
             elapsed_time: msg.start_time.elapsed().as_millis(),
-            flight_reservation: msg.flight_reservation.clone(),
+            flight_reservation: msg.flight_reservation,
         }) {
             Ok(_) => {}
             Err(_) => {

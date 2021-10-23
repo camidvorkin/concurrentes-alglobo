@@ -51,7 +51,7 @@ async fn main() {
         let start_time = std::time::Instant::now();
         let info_flight = InfoFlight {
             flight_reservation: flight_reservation.clone(),
-            start_time: start_time.clone(),
+            start_time,
         };
 
         let addr_airline = match addr_airlines.get(&flight_reservation.airline) {

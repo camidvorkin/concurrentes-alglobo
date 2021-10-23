@@ -15,7 +15,7 @@ impl Clone for InfoFlight {
     fn clone(&self) -> Self {
         InfoFlight {
             flight_reservation: self.flight_reservation.clone(),
-            start_time: self.start_time.clone(),
+            start_time: self.start_time,
         }
     }
 }

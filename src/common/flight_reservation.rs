@@ -55,7 +55,7 @@ pub fn from_file(filename: &str) -> Vec<FlightReservation> {
             origin: flight[0].clone(),
             destination: flight[1].clone(),
             airline: flight[2].clone(),
-            hotel: flight[3].clone() == "true",
+            hotel: flight[3] == "true",
         });
     }
     flights
