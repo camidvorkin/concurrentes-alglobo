@@ -4,7 +4,7 @@ extern crate actix;
 use crate::flight::InfoFlight;
 use crate::logger;
 use crate::statsactor::Stat;
-use crate::utils::read_file;
+extern crate utils
 use actix::{Actor, Addr, Handler, SyncArbiter, SyncContext};
 use rand::{thread_rng, Rng};
 use std::collections::HashMap;

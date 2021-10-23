@@ -14,9 +14,27 @@ use hotel::Hotel;
 use statsactor::{StatsActor, XXX};
 use std::collections::HashMap;
 
-use utils::process_flights;
+const IS_HOTEL: &str = "package";
 
-const AIRLINES_FILE: &str = "src/configs/airlines.txt";
+/// Read CSV file with all the flights requests and return a vector of every FlightReservation
+pub fn process_flights(filename: &str) -> Vec<FlightReservation> {
+    let flights_reservations = read_file(filename).unwrap();
+    let mut flights = Vec::<FlightReservation>::new();
+    let mut i = 1;
+    for flight in flights_reservations {
+        flights.push(FlightReservation {
+            id: i,
+            origin: flight[0].clone(),
+            destination: flight[1].clone(),
+            airline: flight[2].clone(),
+            hotel: flight[3].clone() == IS_HOTEL,
+        });
+        i += 1;
+    }
+    flights
+}
+
+const AIRLINES_FILE: &str = "src/actix/configs/airlines.txt";
 const RATE_LIMITING_DEFAULT: usize = 2;
 
 #[actix_rt::main]

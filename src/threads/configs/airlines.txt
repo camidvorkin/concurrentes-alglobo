@@ -1,0 +1,4 @@
+AA,3
+UA,3
+DL,3
+LATAM,3
