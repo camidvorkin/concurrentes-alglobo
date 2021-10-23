@@ -65,7 +65,7 @@ async fn main() {
             Some(val) => val,
         };
 
-        let flight_res = addr_airline.send(info_flight.to_owned());
+        let flight_res = addr_airline.send(info_flight.clone());
         let hotel_res = match flight_reservation.hotel {
             true => Some(addr_hotel.send(info_flight)),
             false => None,

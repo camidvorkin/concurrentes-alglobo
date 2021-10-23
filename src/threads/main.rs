@@ -82,7 +82,7 @@ async fn main() -> std::io::Result<()> {
             .data(AppState {
                 airlines: airlines.to_owned(),
                 statistics: statistics_webserver.to_owned(),
-                logger_sender: logger_sender.clone(),
+                logger_sender: logger_sender.to_owned(),
             })
             .service(reservation)
     })
@@ -94,7 +94,7 @@ async fn main() -> std::io::Result<()> {
 /// This documentation isn't showing anywhere on rustdoc :(
 #[post("/")]
 fn reservation(req: web::Json<FlightReservation>, appstate: web::Data<AppState>) -> HttpResponse {
-    let flight: FlightReservation = req.clone();
+    let flight: FlightReservation = req.to_owned();
     let semaphore = appstate.airlines.get(&req.airline);
     match semaphore {
         None => {
@@ -109,9 +109,9 @@ fn reservation(req: web::Json<FlightReservation>, appstate: web::Data<AppState>)
 
             alglobo::reserve(
                 flight,
-                semaphore.clone(),
-                appstate.statistics.clone(),
-                appstate.logger_sender.clone(),
+                semaphore.to_owned(),
+                appstate.statistics.to_owned(),
+                appstate.logger_sender.to_owned(),
             );
 
             HttpResponse::Ok().finish()

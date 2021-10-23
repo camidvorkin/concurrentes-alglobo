@@ -52,9 +52,9 @@ pub fn from_file(filename: &str) -> Vec<FlightReservation> {
     for (i, flight) in flights_reservations.iter().enumerate() {
         flights.push(FlightReservation {
             id: i as i32,
-            origin: flight[0].clone(),
-            destination: flight[1].clone(),
-            airline: flight[2].clone(),
+            origin: flight[0].to_owned(),
+            destination: flight[1].to_owned(),
+            airline: flight[2].to_owned(),
             hotel: flight[3] == "true",
         });
     }
