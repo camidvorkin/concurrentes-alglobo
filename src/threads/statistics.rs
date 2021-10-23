@@ -69,4 +69,26 @@ impl Statistics {
         top_destinations.sort_by(|a, b| b.1.cmp(&a.1));
         top_destinations.into_iter().take(n).collect()
     }
+
+    pub fn print_operational_stats(&self) {
+        println!(
+            "Operational Stats \n\
+                              * Completed Flights: {} \n\
+                              * Total Waiting Time: {} \n\
+                              * Avg Response time: {:.2} \n",
+            self.get_total_count(),
+            self.get_sum_time(),
+            self.get_avg_time()
+        );
+    }
+
+    pub fn print_top_routes(&self, n: usize) {
+        let top_routes = self.get_top_destinations(n);
+        if !top_routes.is_empty() {
+            println!("Top {} most solicited routes", top_routes.len());
+            for (k, v) in top_routes {
+                println!("* {} ({} flights)", k, v);
+            }
+        }
+    }
 }

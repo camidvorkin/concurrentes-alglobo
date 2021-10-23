@@ -22,23 +22,8 @@ pub fn keyboard_listener(statistics: Statistics) {
                     println!("quit");
                     break;
                 } else if STAT_COMMANDS.contains(&input) {
-                    println!(
-                        "Operational Stats \n\
-                              * Completed Flights: {} \n\
-                              * Total Waiting Time: {} \n\
-                              * Avg Response time: {:.2} \n",
-                        statistics.get_total_count(),
-                        statistics.get_sum_time(),
-                        statistics.get_avg_time()
-                    );
-
-                    let top_routes = statistics.get_top_destinations(10);
-                    if !top_routes.is_empty() {
-                        println!("Top {} most solicited routes", top_routes.len());
-                        for (k, v) in top_routes {
-                            println!("* {} ({} flights)", k, v);
-                        }
-                    }
+                    statistics.print_operational_stats();
+                    statistics.print_top_routes(10);
                 }
             }
             Err(_) => panic!("Failed to read stdin"),
