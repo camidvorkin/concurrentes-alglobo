@@ -31,6 +31,7 @@
 use std::sync::mpsc::{self, Receiver, Sender};
 mod airlines;
 mod alglobo;
+use actix_web::rt::System;
 use common::flight_reservation::FlightReservation;
 mod statistics;
 use actix_web::{post, web, App, HttpResponse, HttpServer};
@@ -42,7 +43,7 @@ use statistics::Statistics;
 
 use std::thread;
 mod keyboard;
-use keyboard::keyboard_listener;
+use keyboard::keyboard_loop;
 
 /// This is the shared state that will be shared across every thread listening to new requests: the airlines configurations and the universal stats entity
 struct AppState {
@@ -53,11 +54,16 @@ struct AppState {
 
 /// The main function. It starts a thread for the keyboard listener, and it starts the actix-web server
 #[actix_web::main]
-async fn main() -> std::io::Result<()> {
+async fn main() {
+    // We create a mpsc for the HTTP Server, so that we can run it on its own thread and then gracefully shut it down
+    // https://actix.rs/docs/server/
+    let (server_sender, server_receiver) = mpsc::channel();
+
     let (logger_sender, logger_receiver): (Sender<LoggerMsg>, Receiver<LoggerMsg>) =
         mpsc::channel();
+    let logger_sender_webserver = logger_sender.clone();
 
-    thread::Builder::new()
+    let _logger_thread = thread::Builder::new()
         .name("logger".to_string())
         .spawn(move || {
             logger::init();
@@ -72,27 +78,48 @@ async fn main() -> std::io::Result<()> {
         .expect("thread creation failed");
 
     let airlines = airlines::from_file(AIRLINES_FILE);
+    logger_sender
+        .send(("Airlines CSV files processed".to_string(), LogLevel::TRACE))
+        .expect("Logger mpsc not receving messages");
+
     let statistics = Statistics::new();
-    let statistics_keyboard = statistics.clone();
     let statistics_webserver = statistics.clone();
 
-    thread::Builder::new()
-        .name("keyboard".to_string())
-        .spawn(move || keyboard_listener(statistics_keyboard))
+    let _server_thread = thread::Builder::new()
+        .name("http-server".to_string())
+        .spawn(move || {
+            let sys = System::new("http-server");
+
+            logger_sender_webserver
+                .send(("Server thread started".to_string(), LogLevel::TRACE))
+                .expect("Logger mpsc not receving messages");
+
+            let srv = HttpServer::new(move || {
+                App::new()
+                    .data(AppState {
+                        airlines: airlines.to_owned(),
+                        statistics: statistics_webserver.to_owned(),
+                        logger_sender: logger_sender_webserver.to_owned(),
+                    })
+                    .service(reservation)
+            })
+            .bind(("127.0.0.1", 8080))
+            .expect("Server couldn't start")
+            .run();
+
+            let _ = server_sender.send(srv);
+            sys.run()
+        })
         .expect("thread creation failed");
 
-    HttpServer::new(move || {
-        App::new()
-            .data(AppState {
-                airlines: airlines.to_owned(),
-                statistics: statistics_webserver.to_owned(),
-                logger_sender: logger_sender.to_owned(),
-            })
-            .service(reservation)
-    })
-    .bind(("127.0.0.1", 8080))?
-    .run()
-    .await
+    logger_sender
+        .send(("Keyboard started listening".to_string(), LogLevel::TRACE))
+        .expect("Logger mpsc not receving messages");
+    keyboard_loop(statistics, logger_sender);
+    let srv = server_receiver.recv().unwrap();
+    srv.stop(true).await;
+    // logger_thread.join();
+    // server_thread.join();
 }
 
 /// This documentation isn't showing anywhere on rustdoc :(
