@@ -6,13 +6,13 @@ mod stats_actor;
 use actix::prelude::*;
 
 use airline::Airline;
-use common::logger;
+use common::logger::{self, LogLevel};
 
 use common::{flight_reservation, AIRLINES_FILE, TEST_FLIGHTS_FILE};
 use hotel::Hotel;
 use info_flight::InfoFlight;
 use stats_actor::{FinishMessage, StatsActor};
-use std::collections::HashMap;
+
 use std::env;
 
 #[actix_rt::main]
@@ -51,13 +51,22 @@ async fn main() {
 
         let addr_airline = match addr_airlines.get(&flight_reservation.airline) {
             None => {
-                logger::log(format!(
-                    "Received flight with airline not present in config: {}",
-                    flight_reservation.airline
-                ));
+                logger::log(
+                    format!(
+                        "{} | BAD REQUEST | Airport not present",
+                        flight_reservation.to_string()
+                    ),
+                    LogLevel::INFO,
+                );
                 continue;
             }
-            Some(val) => val,
+            Some(val) => {
+                logger::log(
+                    format!("{} | START", flight_reservation.to_string()),
+                    LogLevel::INFO,
+                );
+                val
+            }
         };
 
         let flight_res = addr_airline.send(info_flight.clone());

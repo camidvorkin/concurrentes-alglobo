@@ -5,6 +5,7 @@ use crate::info_flight::InfoFlight;
 use crate::stats_actor::{Stat, StatsActor};
 use actix::{Actor, Addr, Handler, SyncContext};
 use common::logger;
+use common::logger::LogLevel;
 use common::simulate_requests::simulate_hotel;
 use common::utils::get_retry_seconds;
 
@@ -27,26 +28,21 @@ impl Handler<InfoFlight> for Hotel {
     fn handle(&mut self, msg: InfoFlight, _ctx: &mut Self::Context) -> Self::Result {
         let retry_seconds = get_retry_seconds();
 
-        logger::log(format!(
-            "Starting Request to Hotel: [{}]",
-            msg.flight_reservation.get_route()
-        ));
         while let Err(_) = simulate_hotel() {
-            logger::log(format!("Request hhotel faileddd",));
+            logger::log(
+                format!("{} | HOTEL REQUEST   | RETRY", msg.flight_reservation),
+                LogLevel::INFO,
+            );
             thread::sleep(Duration::from_secs(retry_seconds));
         }
-        match self.addr_statistics.try_send(Stat {
+        logger::log(
+            format!("{} | HOTEL REQUEST   | OK", msg.flight_reservation),
+            LogLevel::INFO,
+        );
+
+        let _ = self.addr_statistics.try_send(Stat {
             elapsed_time: msg.start_time.elapsed().as_millis(),
             flight_reservation: msg.flight_reservation.clone(),
-        }) {
-            Ok(_) => {}
-            Err(_) => {
-                logger::log("StatsActor failed to receive message".to_string());
-            }
-        };
-        logger::log(format!(
-            "Request to Hotel for route [{}]: SUCCESFUL",
-            msg.flight_reservation.id
-        ));
+        });
     }
 }

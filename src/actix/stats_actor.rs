@@ -1,5 +1,8 @@
 use actix::prelude::*;
-use common::flight_reservation::FlightReservation;
+use common::{
+    flight_reservation::FlightReservation,
+    logger::{self, LogLevel},
+};
 use std::collections::HashMap;
 
 pub const STATS_FREQUENCY: i64 = 5;
@@ -105,6 +108,10 @@ impl Handler<Stat> for StatsActor {
         {
             self.add_stat(msg.elapsed_time, msg.flight_reservation.get_route());
             self.flights.remove(&msg.flight_reservation.id);
+            logger::log(
+                format!("{} | FINISH", msg.flight_reservation),
+                LogLevel::INFO,
+            );
         }
 
         if self.get_total_count() > 0 && (self.get_total_count() % STATS_FREQUENCY) == 0 {
