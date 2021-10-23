@@ -1,14 +1,14 @@
 #![forbid(unsafe_code)]
 mod airlines;
 mod flight;
-mod flight_reservation;
 mod hotel;
 mod logger;
 mod statsactor;
-mod utils;
 use actix::prelude::*;
 
 use airlines::Airline;
+use common::flight_reservation::FlightReservation;
+use common::utils::read_file;
 use flight::InfoFlight;
 use hotel::Hotel;
 use statsactor::{StatsActor, XXX};

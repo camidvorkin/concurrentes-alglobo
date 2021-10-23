@@ -1,6 +1,6 @@
-use crate::flight_reservation::FlightReservation;
 use crate::statsactor::StatsActor;
 use actix::{Addr, Message};
+use common::flight_reservation::FlightReservation;
 
 /// Message made to a Actor Airline to start the request of flight reservation to the server.
 /// The message contains the address of the StatsActor for statistics purpuses and the information of the flight reservation.

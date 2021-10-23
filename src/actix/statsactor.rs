@@ -1,6 +1,6 @@
-use crate::flight_reservation::FlightReservation;
 use crate::logger;
 use actix::prelude::*;
+use common::flight_reservation::FlightReservation;
 use std::collections::HashMap;
 
 pub struct Stat {

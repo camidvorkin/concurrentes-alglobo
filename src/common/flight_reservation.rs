@@ -7,6 +7,8 @@ use std::string::ToString;
 /// This struct can be deserialized from a JSON (thanks to serde), making it easier to use, because we now can receive it from the web request in a JSON form
 #[derive(Deserialize)]
 pub struct FlightReservation {
+    #[serde(skip)]
+    pub id: i32,
     pub origin: String,
     pub destination: String,
     pub airline: String,
@@ -28,6 +30,7 @@ impl ToString for FlightReservation {
 impl Clone for FlightReservation {
     fn clone(&self) -> Self {
         FlightReservation {
+            id: self.id,
             origin: self.origin.clone(),
             destination: self.destination.clone(),
             airline: self.airline.clone(),

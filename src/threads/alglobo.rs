@@ -1,29 +1,14 @@
 //! Make the reservations
-use crate::flight_reservation::FlightReservation;
 use crate::statistics::Statistics;
-use rand::Rng;
-use std::env;
+use common::flight_reservation::FlightReservation;
+use common::simulate_requests::{simulate_airline, simulate_hotel};
+use common::utils::get_retry_seconds;
+
 use std::sync::mpsc::Sender;
 use std::sync::{Arc, Barrier};
 use std::thread;
 use std::time::Duration;
 use std_semaphore::Semaphore;
-
-/// If the user doesn't set the ENVVAR `RETRY_SECONDS` we default to this value
-const DEFAULT_RETRY_SECONDS: u64 = 5;
-
-/// Simulated request to an hypothetical hotel web server
-fn simulate_hotel() -> bool {
-    thread::sleep(Duration::from_secs(1));
-    true
-}
-
-/// Simulated request to an hypothetical airline web server
-fn simulate_airline() -> bool {
-    thread::sleep(Duration::from_secs(1));
-
-    rand::thread_rng().gen_bool(0.8)
-}
 
 /// Function that makes the request to the hotel
 fn send_to_hotel(
@@ -31,10 +16,21 @@ fn send_to_hotel(
     barrier: Arc<Barrier>,
     logger_sender: Sender<String>,
 ) {
-    if flight_info.hotel && simulate_hotel() {
-        let s = format!("[{}] Hotel Reservation: OK", flight_info.to_string());
-        logger_sender.send(s).unwrap();
+    let retry_seconds = get_retry_seconds();
+
+    while let Err(_errmsg) = simulate_hotel() {
+        let s = format!("[{}] Hotel Reservation: RETRY", flight_info.to_string());
+        logger_sender
+            .send(s)
+            .expect("Logger mpsc not receving messages");
+        ();
+        thread::sleep(Duration::from_secs(retry_seconds));
     }
+    let s = format!("[{}] Hotel Reservation: OK", flight_info.to_string());
+    logger_sender
+        .send(s)
+        .expect("Logger mpsc not receving messages");
+    ();
     barrier.wait();
 }
 
@@ -47,24 +43,23 @@ fn send_to_airline(
     barrier: Arc<Barrier>,
     logger_sender: Sender<String>,
 ) {
-    let retry_seconds = match env::var("RETRY_SECONDS") {
-        Ok(val) => val.parse::<u64>().unwrap(),
-        Err(_) => DEFAULT_RETRY_SECONDS,
-    };
+    let retry_seconds = get_retry_seconds();
 
-    loop {
-        if simulate_airline() {
-            let s = format!("[{}] Flight Reservation: OK", flight_info.to_string());
-            logger_sender.send(s).unwrap();
-
-            sem.release();
-            barrier.wait();
-            break;
-        }
+    while let Err(_errmsg) = simulate_airline() {
         let s = format!("[{}] Flight Reservation: RETRY", flight_info.to_string());
-        logger_sender.send(s).unwrap();
+        logger_sender
+            .send(s)
+            .expect("Logger mpsc not receving messages");
+        ();
         thread::sleep(Duration::from_secs(retry_seconds));
     }
+    let s = format!("[{}] Flight Reservation: OK", flight_info.to_string());
+    logger_sender
+        .send(s)
+        .expect("Logger mpsc not receving messages");
+    ();
+    sem.release();
+    barrier.wait();
 }
 
 /// We make a reservation by sending the request to the airline webserver and, if we are dealing with packages, to the hotel server
@@ -92,10 +87,13 @@ pub fn reserve(
     rate_limit.acquire();
 
     // Send request to the airline and hotel (if requested) concurrently
-    thread::Builder::new()
-        .name("hotel".to_string())
-        .spawn(move || send_to_hotel(flight_hotel, barrier_hotel, logger_sender_hotel))
-        .expect("thread creation failed");
+
+    if flight_reservation.hotel {
+        thread::Builder::new()
+            .name("hotel".to_string())
+            .spawn(move || send_to_hotel(flight_hotel, barrier_hotel, logger_sender_hotel))
+            .expect("thread creation failed");
+    }
 
     thread::Builder::new()
         .name(flight_reservation.airline)

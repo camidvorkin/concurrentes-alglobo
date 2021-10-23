@@ -4,15 +4,14 @@ extern crate actix;
 use crate::flight::InfoFlight;
 use crate::logger;
 use crate::statsactor::Stat;
-extern crate utils
 use actix::{Actor, Addr, Handler, SyncArbiter, SyncContext};
+use common::utils::{get_retry_seconds, read_file};
 use rand::{thread_rng, Rng};
 use std::collections::HashMap;
-use std::env;
+
 use std::thread;
 use std::time::Duration;
 
-const DEFAULT_RETRY_SECONDS: u64 = 5;
 /// WebServer actor airline
 pub struct Airline {}
 
@@ -33,11 +32,7 @@ impl Handler<InfoFlight> for Airline {
             msg.flight_reservation.get_route()
         ));
         loop {
-            // thread::sleep(Duration::from_millis(thread_rng().gen_range(500, 1500)));
-            let retry_seconds = match env::var("RETRY_SECONDS") {
-                Ok(val) => val.parse::<u64>().unwrap(),
-                Err(_) => DEFAULT_RETRY_SECONDS,
-            };
+            let retry_seconds = get_retry_seconds();
 
             thread::sleep(Duration::from_secs(1));
             let retry = thread_rng().gen_bool(0.4);
