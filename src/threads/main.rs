@@ -36,6 +36,7 @@ mod statistics;
 use actix_web::{post, web, App, HttpResponse, HttpServer};
 use airlines::Airlines;
 use common::logger;
+use common::logger::LogLevel;
 use common::AIRLINES_FILE;
 use statistics::Statistics;
 
@@ -47,23 +48,28 @@ use keyboard::keyboard_listener;
 struct AppState {
     airlines: Airlines,
     statistics: Statistics,
-    logger_sender: Sender<String>,
+    logger_sender: Sender<(String, LogLevel)>,
 }
 
 /// The main function. It starts a thread for the keyboard listener, and it starts the actix-web server
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    let (logger_sender, logger_receiver): (Sender<String>, Receiver<String>) = mpsc::channel();
+    let (logger_sender, logger_receiver): (
+        Sender<(String, LogLevel)>,
+        Receiver<(String, LogLevel)>,
+    ) = mpsc::channel();
 
     thread::Builder::new()
         .name("logger".to_string())
-        .spawn(move || loop {
+        .spawn(move || {
             logger::init();
-            let s = logger_receiver
-                .recv()
-                .expect("Logger mpsc couldn't receive message");
+            loop {
+                let (msg, loglevel) = logger_receiver
+                    .recv()
+                    .expect("Logger mpsc couldn't receive message");
 
-            logger::log(s);
+                logger::log(msg, loglevel);
+            }
         })
         .expect("thread creation failed");
 
@@ -94,17 +100,30 @@ async fn main() -> std::io::Result<()> {
 /// This documentation isn't showing anywhere on rustdoc :(
 #[post("/")]
 fn reservation(req: web::Json<FlightReservation>, appstate: web::Data<AppState>) -> HttpResponse {
+    appstate
+        .logger_sender
+        .send((format!("GET / -- {:?}", req), LogLevel::TRACE))
+        .expect("Logger mpsc not receving messages");
+
     let flight: FlightReservation = req.to_owned();
     let semaphore = appstate.airlines.get(&req.airline);
     match semaphore {
         None => {
+            appstate
+                .logger_sender
+                .send((
+                    format!("{} | BAD REQUEST | Airport not present", flight.to_string()),
+                    LogLevel::INFO,
+                ))
+                .expect("Logger mpsc not receving messages");
+
             return HttpResponse::NotAcceptable()
                 .body("Airline not present on server configuration");
         }
         Some(semaphore) => {
             appstate
                 .logger_sender
-                .send(format!("[{}] New Request", flight.to_string()))
+                .send((format!("{} | START", flight.to_string()), LogLevel::INFO))
                 .expect("Logger mpsc not receving messages");
 
             alglobo::reserve(

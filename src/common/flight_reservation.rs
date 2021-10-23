@@ -1,11 +1,11 @@
 //! Flight Reservations Struct
 use crate::utils::read_file;
 use serde::Deserialize;
-use std::string::ToString;
+use std::fmt;
 /// Struct
 ///
 /// This struct can be deserialized from a JSON (thanks to serde), making it easier to use, because we now can receive it from the web request in a JSON form
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 pub struct FlightReservation {
     #[serde(skip)]
     pub id: i32,
@@ -15,15 +15,14 @@ pub struct FlightReservation {
     pub hotel: bool,
 }
 
-impl ToString for FlightReservation {
-    fn to_string(&self) -> String {
+impl fmt::Display for FlightReservation {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut string = format!("{}->{}", self.origin, self.destination);
-        if self.hotel {
-            string += &format!(" ({}+)", self.airline)
-        } else {
-            string += &format!(" ({})", self.airline)
+        match self.hotel {
+            true => string += &format!("({}+)", self.airline),
+            false => string += &format!("({})", self.airline),
         }
-        string
+        write!(f, "{}", string)
     }
 }
 

@@ -18,7 +18,7 @@ pub fn read_file(filename: &str) -> Result<Vec<Vec<String>>, Box<dyn Error>> {
 }
 
 /// If the user doesn't set the ENVVAR `RETRY_SECONDS` we default to this value
-pub const DEFAULT_RETRY_SECONDS: u64 = 5;
+pub const DEFAULT_RETRY_SECONDS: u64 = 2;
 
 pub fn get_retry_seconds() -> u64 {
     match env::var("RETRY_SECONDS") {
