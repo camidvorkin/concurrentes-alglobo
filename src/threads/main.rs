@@ -35,14 +35,13 @@ use common::flight_reservation::FlightReservation;
 mod statistics;
 use actix_web::{post, web, App, HttpResponse, HttpServer};
 use airlines::Airlines;
+use common::logger;
 use common::AIRLINES_FILE;
 use statistics::Statistics;
 
 use std::thread;
 mod keyboard;
 use keyboard::keyboard_listener;
-mod logger;
-use logger::logger;
 
 /// This is the shared state that will be shared across every thread listening to new requests: the airlines configurations and the universal stats entity
 struct AppState {
@@ -54,21 +53,28 @@ struct AppState {
 /// The main function. It starts a thread for the keyboard listener, and it starts the actix-web server
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    let (logger_sender, logger_receiver): (Sender<String>, Receiver<String>) = mpsc::channel();
+
+    thread::Builder::new()
+        .name("logger".to_string())
+        .spawn(move || loop {
+            logger::init();
+            let s = logger_receiver
+                .recv()
+                .expect("Logger mpsc couldn't receive message");
+
+            logger::log(s);
+        })
+        .expect("thread creation failed");
+
     let airlines = airlines::from_file(AIRLINES_FILE);
     let statistics = Statistics::new();
     let statistics_keyboard = statistics.clone();
     let statistics_webserver = statistics.clone();
 
-    let (logger_sender, logger_receiver): (Sender<String>, Receiver<String>) = mpsc::channel();
-
     thread::Builder::new()
         .name("keyboard".to_string())
         .spawn(move || keyboard_listener(statistics_keyboard))
-        .expect("thread creation failed");
-
-    thread::Builder::new()
-        .name("logger".to_string())
-        .spawn(move || logger(logger_receiver))
         .expect("thread creation failed");
 
     HttpServer::new(move || {

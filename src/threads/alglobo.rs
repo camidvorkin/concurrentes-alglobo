@@ -18,7 +18,7 @@ fn send_to_hotel(
 ) {
     let retry_seconds = get_retry_seconds();
 
-    while let Err(_errmsg) = simulate_hotel() {
+    while let Err(_) = simulate_hotel() {
         let s = format!("[{}] Hotel Reservation: RETRY", flight_info.to_string());
         logger_sender
             .send(s)
@@ -45,7 +45,7 @@ fn send_to_airline(
 ) {
     let retry_seconds = get_retry_seconds();
 
-    while let Err(_errmsg) = simulate_airline() {
+    while let Err(_) = simulate_airline() {
         let s = format!("[{}] Flight Reservation: RETRY", flight_info.to_string());
         logger_sender
             .send(s)

@@ -1,9 +1,0 @@
-1,11,AA,flight
-2,22,AA,package
-3,33,AA,package
-4,44,AA,package
-5,55,AA,package
-6,66,AA,package
-7,77,AA,package
-8,88,AA,package
-9,99,AA,package
