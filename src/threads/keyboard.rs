@@ -12,7 +12,7 @@ const QUIT_COMMANDS: [&str; 2] = ["Q", "QUIT"];
 const STAT_COMMANDS: [&str; 2] = ["S", "STATS"];
 
 /// Listents to `s` (show stats) and `q` (quit) commands
-pub fn keyboard_loop(statistics: Statistics, logger_sender: Sender<LoggerMsg>) {
+pub fn keyboard_loop(statistics: Statistics, logger_sender: &Sender<LoggerMsg>) {
     println!("At any time press S to query for stats or Q to gracefully exit \n");
     let stdin = io::stdin();
     for line in stdin.lock().lines() {
