@@ -143,10 +143,10 @@
 //!
 //! Mensaje que se envía al actor `StatsActor` para indicar que finalizó de procesarse el request de vuelo. Está compuesto por el tiempo de procesamiento de un request y `FlightReservation` para conocer la informacion del vuelo. La respuesta esperada para este tipo de mensajes es vacía.
 //!
-//! ```
+//! ```rust
 //! pub struct Stat {
-//! pub elapsed_time: u128,
-//! pub flight_reservation: FlightReservation,
+//!   pub elapsed_time: u128,
+//!   pub flight_reservation: FlightReservation,
 //! }
 //! ```
 //!
@@ -179,3 +179,5 @@
 //! Clavar un par de screenshots de htop
 //!
 //! Diagramas de entidades realizados (structs y demás).
+
+pub fn main() {}
