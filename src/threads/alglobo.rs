@@ -2,7 +2,7 @@
 use crate::statistics::Statistics;
 use common::flight_reservation::FlightReservation;
 use common::logger::{LogLevel, LoggerMsg};
-// use common::simulate_requests::{simulate_airline, simulate_hotel};
+use common::simulate_requests::{simulate_airline, simulate_hotel};
 use common::utils::get_retry_seconds;
 
 use std::sync::mpsc::Sender;
@@ -11,35 +11,6 @@ use std::thread;
 use std::time::Duration;
 use std_semaphore::Semaphore;
 use rand::{thread_rng, Rng};
-
-
-/// Simulated request to an hypothetical hotel web server
-#[cfg(not(test))]
-pub fn simulate_hotel() -> () {
-    thread::sleep(Duration::from_secs(1));
-}
-
-#[cfg(test)]
-pub fn simulate_hotel() -> () {
-    thread::sleep(Duration::from_secs());
-}
-
-/// Simulated request to an hypothetical airline web server
-#[cfg(not(test))]
-pub fn simulate_airline() -> Result<(), &'static str> {
-    thread::sleep(Duration::from_secs(2));
-
-    match rand::thread_rng().gen_bool(0.8) {
-        true => Ok(()),
-        false => Err("Request to airline failed"),
-    }
-}
-
-#[cfg(test)]
-pub fn simulate_airline() -> Result<(), &'static str> {
-    thread::sleep(Duration::from_millis(100));
-    Ok(())
-}
 
 /// Function that makes the request to the hotel
 fn send_to_hotel(

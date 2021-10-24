@@ -161,6 +161,21 @@
 <span id="161">161</span>
 <span id="162">162</span>
 <span id="163">163</span>
+<span id="164">164</span>
+<span id="165">165</span>
+<span id="166">166</span>
+<span id="167">167</span>
+<span id="168">168</span>
+<span id="169">169</span>
+<span id="170">170</span>
+<span id="171">171</span>
+<span id="172">172</span>
+<span id="173">173</span>
+<span id="174">174</span>
+<span id="175">175</span>
+<span id="176">176</span>
+<span id="177">177</span>
+<span id="178">178</span>
 </pre><pre class="rust">
 <span class="doccomment">//! AlGlobo - Simple HTTP server for reserving a flight</span>
 <span class="doccomment">//! ---</span>
@@ -231,12 +246,12 @@
         .<span class="ident">name</span>(<span class="string">&quot;logger&quot;</span>.<span class="ident">to_string</span>())
         .<span class="ident">spawn</span>(<span class="kw">move</span> <span class="op">|</span><span class="op">|</span> {
             <span class="ident">logger::init</span>();
-            <span class="kw">loop</span> {
-                <span class="kw">let</span> (<span class="ident">msg</span>, <span class="ident">loglevel</span>) <span class="op">=</span> <span class="ident">logger_receiver</span>
-                    .<span class="ident">recv</span>()
-                    .<span class="ident">expect</span>(<span class="string">&quot;Logger mpsc couldn&#39;t receive message&quot;</span>);
 
+            <span class="kw">while</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>((<span class="ident">msg</span>, <span class="ident">loglevel</span>)) <span class="op">=</span> <span class="ident">logger_receiver</span>.<span class="ident">recv</span>() {
                 <span class="ident">logger::log</span>(<span class="ident">msg</span>, <span class="ident">loglevel</span>);
+                <span class="kw">if</span> <span class="kw">let</span> <span class="ident">LogLevel::FINISH</span> <span class="op">=</span> <span class="ident">loglevel</span> {
+                    <span class="kw">break</span>;
+                }
             }
         })
         .<span class="ident">expect</span>(<span class="string">&quot;thread creation failed&quot;</span>);
@@ -249,6 +264,8 @@
     <span class="kw">let</span> <span class="ident">statistics</span> <span class="op">=</span> <span class="ident">Statistics::new</span>();
     <span class="kw">let</span> <span class="ident">statistics_webserver</span> <span class="op">=</span> <span class="ident">statistics</span>.<span class="ident">clone</span>();
 
+    <span class="comment">// This thread gets terminated when calling server.stop()</span>
+    <span class="comment">// https://docs.rs/actix-web/0.3.3/actix_web/server/struct.StopServer.html</span>
     <span class="kw">let</span> <span class="ident">_server_thread</span> <span class="op">=</span> <span class="ident">thread::Builder::new</span>()
         .<span class="ident">name</span>(<span class="string">&quot;http-server&quot;</span>.<span class="ident">to_string</span>())
         .<span class="ident">spawn</span>(<span class="kw">move</span> <span class="op">|</span><span class="op">|</span> {
@@ -267,6 +284,7 @@
                     })
                     .<span class="ident">service</span>(<span class="ident">reservation</span>)
             })
+            .<span class="ident">shutdown_timeout</span>(<span class="number">5</span>)
             .<span class="ident">bind</span>((<span class="string">&quot;127.0.0.1&quot;</span>, <span class="number">8080</span>))
             .<span class="ident">expect</span>(<span class="string">&quot;Server couldn&#39;t start&quot;</span>)
             .<span class="ident">run</span>();
@@ -279,11 +297,23 @@
     <span class="ident">logger_sender</span>
         .<span class="ident">send</span>((<span class="string">&quot;Keyboard started listening&quot;</span>.<span class="ident">to_string</span>(), <span class="ident">LogLevel::TRACE</span>))
         .<span class="ident">expect</span>(<span class="string">&quot;Logger mpsc not receving messages&quot;</span>);
-    <span class="ident">keyboard_loop</span>(<span class="ident">statistics</span>, <span class="ident">logger_sender</span>);
-    <span class="kw">let</span> <span class="ident">srv</span> <span class="op">=</span> <span class="ident">server_receiver</span>.<span class="ident">recv</span>().<span class="ident">unwrap</span>();
+
+    <span class="comment">// Reference to the server, so that we can then shut it down</span>
+    <span class="kw">let</span> <span class="ident">srv</span> <span class="op">=</span> <span class="ident">server_receiver</span>
+        .<span class="ident">recv</span>()
+        .<span class="ident">expect</span>(<span class="string">&quot;Couldn&#39;t receive server ref through mpsc&quot;</span>);
+
+    <span class="comment">// This is an infinite loop that only exits on a QUIT command</span>
+    <span class="comment">// Anything after this line is part of the graceful shutdown</span>
+    <span class="ident">keyboard_loop</span>(<span class="ident">statistics</span>, <span class="ident">logger_sender</span>.<span class="ident">clone</span>());
+
+    <span class="ident">logger_sender</span>
+        .<span class="ident">send</span>((<span class="string">&quot;Shut down server&quot;</span>.<span class="ident">to_string</span>(), <span class="ident">LogLevel::FINISH</span>))
+        .<span class="ident">expect</span>(<span class="string">&quot;Logger mpsc not receving messages&quot;</span>);
+
+    <span class="comment">// We stop the server, which joins the server thread (and therefore drops any lingering mpsc ref we have)</span>
+    <span class="comment">// This is a graceful shutdown, so any request still in place will be completed before shutdown</span>
     <span class="ident">srv</span>.<span class="ident">stop</span>(<span class="bool-val">true</span>).<span class="kw">await</span>;
-    <span class="comment">// logger_thread.join();</span>
-    <span class="comment">// server_thread.join();</span>
 }
 
 <span class="doccomment">/// This documentation isn&#39;t showing anywhere on rustdoc :(</span>
