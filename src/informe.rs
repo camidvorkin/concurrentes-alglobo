@@ -80,7 +80,7 @@
 //!
 //! Una vez que se completa el request a la aerolínea, se procede a agregar las estadísticas correspondientes, se suma el tiempo total que tardó en procesar el pedido de principio a fin y se agrega la ruta solicitada(para agregar estas estadísticas, será necesario obtener el lock para poder leer el estado actual de las estadísticas y agregar las nuevas).
 //!
-//! ![Threads](../../../../img/threads.jpg)
+//! ![Threads](../../../img/threads.jpg)
 //!
 //! # Parte B
 //! La resolución de la primera parte del Trabajo Práctico se encuentra en la carpeta `src/actix` y se podrá ejecutar con `cargo run --bin actix`.

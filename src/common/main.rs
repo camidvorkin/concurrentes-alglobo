@@ -1,5 +1,4 @@
 pub mod flight_reservation;
-pub mod informe;
 pub mod logger;
 pub mod simulate_requests;
 pub mod utils;
