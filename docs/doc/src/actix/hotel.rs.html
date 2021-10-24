@@ -35,6 +35,10 @@
 <span id="35">35</span>
 <span id="36">36</span>
 <span id="37">37</span>
+<span id="38">38</span>
+<span id="39">39</span>
+<span id="40">40</span>
+<span id="41">41</span>
 </pre><pre class="rust">
 <span class="doccomment">//! Handle airlines config</span>
 <span class="kw">extern</span> <span class="kw">crate</span> <span class="ident">actix</span>;
@@ -45,7 +49,6 @@
 <span class="kw">use</span> <span class="ident">common::logger</span>;
 <span class="kw">use</span> <span class="ident">common::logger::LogLevel</span>;
 <span class="kw">use</span> <span class="ident">common::simulate_requests::simulate_hotel</span>;
-<span class="kw">use</span> <span class="ident">common::utils::get_retry_seconds</span>;
 
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Hotel</span> {
     <span class="kw">pub</span> <span class="ident">addr_statistics</span>: <span class="ident">Addr</span><span class="op">&lt;</span><span class="ident">StatsActor</span><span class="op">&gt;</span>,
@@ -61,9 +64,14 @@
     <span class="doccomment">/// Handle the message of InfoFlight and simulates to send it to the Hotel server if the request includes the whole package experience.</span>
     <span class="doccomment">/// The server is always available so the request is always successful.</span>
     <span class="kw">fn</span> <span class="ident">handle</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">msg</span>: <span class="ident">InfoFlight</span>, <span class="ident">_ctx</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">Self</span><span class="ident">::Context</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span><span class="ident">::Result</span> {
+        <span class="ident">logger::log</span>(
+            <span class="macro">format!</span>(<span class="string">&quot;{} | HOTEL   | Request started&quot;</span>, <span class="ident">msg</span>.<span class="ident">flight_reservation</span>),
+            <span class="ident">LogLevel::INFO</span>,
+        );
+
         <span class="ident">simulate_hotel</span>();
         <span class="ident">logger::log</span>(
-            <span class="macro">format!</span>(<span class="string">&quot;{} | HOTEL REQUEST   | OK&quot;</span>, <span class="ident">msg</span>.<span class="ident">flight_reservation</span>),
+            <span class="macro">format!</span>(<span class="string">&quot;{} | HOTEL   | Request accepted&quot;</span>, <span class="ident">msg</span>.<span class="ident">flight_reservation</span>),
             <span class="ident">LogLevel::INFO</span>,
         );
 

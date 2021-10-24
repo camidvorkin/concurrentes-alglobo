@@ -1,1 +1,1 @@
-initSidebarItems({"fn":[["simulate_airline","Simulated request to an hypothetical airline web server"],["simulate_hotel","Simulated request to an hypothetical hotel web server"]]});
+initSidebarItems({"constant":[["MAX_TIME",""],["MIN_TIME",""],["RAND_SUCCESSFUL_REQUEST",""]],"fn":[["simulate_airline","Simulated request to a hypothetical airline web server"],["simulate_hotel","Simulated request to a hypothetical hotel web server"]]});

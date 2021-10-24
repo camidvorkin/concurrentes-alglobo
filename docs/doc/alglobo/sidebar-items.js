@@ -1,1 +1,0 @@
-initSidebarItems({"constant":[["AIRLINES_FILE",""],["RATE_LIMITING_DEFAULT",""]],"fn":[["main",""]],"mod":[["airlines","Handle airlines config"],["flight",""],["flight_reservation","Flight Reservations Struct"],["hotel","Handle airlines config"],["logger",""],["statsactor",""],["utils","Helper Functions"]]});

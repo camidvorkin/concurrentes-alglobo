@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["actix"] = [{"text":"impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.55.0/core/default/trait.Default.html\" title=\"trait core::default::Default\">Default</a> for <a class=\"struct\" href=\"actix/stats_actor/struct.StatsActor.html\" title=\"struct actix::stats_actor::StatsActor\">StatsActor</a>","synthetic":false,"types":["actix::stats_actor::StatsActor"]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

@@ -72,6 +72,13 @@
 <span id="72">72</span>
 <span id="73">73</span>
 <span id="74">74</span>
+<span id="75">75</span>
+<span id="76">76</span>
+<span id="77">77</span>
+<span id="78">78</span>
+<span id="79">79</span>
+<span id="80">80</span>
+<span id="81">81</span>
 </pre><pre class="rust">
 <span class="doccomment">//! Handle airlines config</span>
 <span class="kw">extern</span> <span class="kw">crate</span> <span class="ident">actix</span>;
@@ -104,18 +111,25 @@
     <span class="doccomment">/// If the server is not available, the message is sent again after a random time. If the server is available,</span>
     <span class="doccomment">/// the message is sent to the StatsActor for statistics purpuses.</span>
     <span class="kw">fn</span> <span class="ident">handle</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">msg</span>: <span class="ident">InfoFlight</span>, <span class="ident">_ctx</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">Self</span><span class="ident">::Context</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span><span class="ident">::Result</span> {
+        <span class="ident">logger::log</span>(
+            <span class="macro">format!</span>(<span class="string">&quot;{} | AIRLINE | Request started&quot;</span>, <span class="ident">msg</span>.<span class="ident">flight_reservation</span>),
+            <span class="ident">LogLevel::INFO</span>,
+        );
         <span class="kw">let</span> <span class="ident">retry_seconds</span> <span class="op">=</span> <span class="ident">get_retry_seconds</span>();
 
         <span class="kw">while</span> <span class="ident">simulate_airline</span>().<span class="ident">is_err</span>() {
             <span class="ident">logger::log</span>(
-                <span class="macro">format!</span>(<span class="string">&quot;{} | AIRLINE REQUEST   | RETRY&quot;</span>, <span class="ident">msg</span>.<span class="ident">flight_reservation</span>),
+                <span class="macro">format!</span>(
+                    <span class="string">&quot;{} | AIRLINE | Request rejected ; Retry in {} seconds&quot;</span>,
+                    <span class="ident">msg</span>.<span class="ident">flight_reservation</span>, <span class="ident">retry_seconds</span>
+                ),
                 <span class="ident">LogLevel::INFO</span>,
             );
             <span class="ident">thread::sleep</span>(<span class="ident">Duration::from_secs</span>(<span class="ident">retry_seconds</span>));
         }
 
         <span class="ident">logger::log</span>(
-            <span class="macro">format!</span>(<span class="string">&quot;{} | AIRLINE REQUEST   | OK&quot;</span>, <span class="ident">msg</span>.<span class="ident">flight_reservation</span>),
+            <span class="macro">format!</span>(<span class="string">&quot;{} | AIRLINE | Request accepted&quot;</span>, <span class="ident">msg</span>.<span class="ident">flight_reservation</span>,),
             <span class="ident">LogLevel::INFO</span>,
         );
 

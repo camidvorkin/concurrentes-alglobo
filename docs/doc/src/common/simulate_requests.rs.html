@@ -15,20 +15,36 @@
 <span id="15">15</span>
 <span id="16">16</span>
 <span id="17">17</span>
+<span id="18">18</span>
+<span id="19">19</span>
+<span id="20">20</span>
+<span id="21">21</span>
+<span id="22">22</span>
+<span id="23">23</span>
+<span id="24">24</span>
+<span id="25">25</span>
 </pre><pre class="rust">
 <span class="kw">use</span> <span class="ident">rand</span>::{<span class="ident">thread_rng</span>, <span class="ident">Rng</span>};
 <span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">thread</span>, <span class="ident">time::Duration</span>};
 
-<span class="doccomment">/// Simulated request to an hypothetical hotel web server</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">simulate_hotel</span>() <span class="op">-</span><span class="op">&gt;</span> () {
-    <span class="ident">thread::sleep</span>(<span class="ident">Duration::from_millis</span>(<span class="ident">thread_rng</span>().<span class="ident">gen_range</span>(<span class="number">500</span>, <span class="number">1500</span>)));
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MIN_TIME</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">500</span>;
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MAX_TIME</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">1500</span>;
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">RAND_SUCCESSFUL_REQUEST</span>: <span class="ident">f64</span> <span class="op">=</span> <span class="number">0.8</span>;
+
+<span class="doccomment">/// Simulated request to a hypothetical hotel web server</span>
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">simulate_hotel</span>() {
+    <span class="ident">thread::sleep</span>(<span class="ident">Duration::from_millis</span>(
+        <span class="ident">thread_rng</span>().<span class="ident">gen_range</span>(<span class="ident">MIN_TIME</span>, <span class="ident">MAX_TIME</span>),
+    ));
 }
 
-<span class="doccomment">/// Simulated request to an hypothetical airline web server</span>
+<span class="doccomment">/// Simulated request to a hypothetical airline web server</span>
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">simulate_airline</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">str</span><span class="op">&gt;</span> {
-    <span class="ident">thread::sleep</span>(<span class="ident">Duration::from_millis</span>(<span class="ident">thread_rng</span>().<span class="ident">gen_range</span>(<span class="number">500</span>, <span class="number">1500</span>)));
+    <span class="ident">thread::sleep</span>(<span class="ident">Duration::from_millis</span>(
+        <span class="ident">thread_rng</span>().<span class="ident">gen_range</span>(<span class="ident">MIN_TIME</span>, <span class="ident">MAX_TIME</span>),
+    ));
 
-    <span class="kw">match</span> <span class="ident">rand::thread_rng</span>().<span class="ident">gen_bool</span>(<span class="number">0.8</span>) {
+    <span class="kw">match</span> <span class="ident">rand::thread_rng</span>().<span class="ident">gen_bool</span>(<span class="ident">RAND_SUCCESSFUL_REQUEST</span>) {
         <span class="bool-val">true</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(()),
         <span class="bool-val">false</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Err</span>(<span class="string">&quot;Request to airline failed&quot;</span>),
     }

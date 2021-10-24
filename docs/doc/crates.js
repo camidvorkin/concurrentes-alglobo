@@ -1,1 +1,1 @@
-window.ALL_CRATES = ["actix","alglobo","common","threads"];
+window.ALL_CRATES = ["actix","common","informe","threads"];

@@ -105,6 +105,50 @@
 <span id="105">105</span>
 <span id="106">106</span>
 <span id="107">107</span>
+<span id="108">108</span>
+<span id="109">109</span>
+<span id="110">110</span>
+<span id="111">111</span>
+<span id="112">112</span>
+<span id="113">113</span>
+<span id="114">114</span>
+<span id="115">115</span>
+<span id="116">116</span>
+<span id="117">117</span>
+<span id="118">118</span>
+<span id="119">119</span>
+<span id="120">120</span>
+<span id="121">121</span>
+<span id="122">122</span>
+<span id="123">123</span>
+<span id="124">124</span>
+<span id="125">125</span>
+<span id="126">126</span>
+<span id="127">127</span>
+<span id="128">128</span>
+<span id="129">129</span>
+<span id="130">130</span>
+<span id="131">131</span>
+<span id="132">132</span>
+<span id="133">133</span>
+<span id="134">134</span>
+<span id="135">135</span>
+<span id="136">136</span>
+<span id="137">137</span>
+<span id="138">138</span>
+<span id="139">139</span>
+<span id="140">140</span>
+<span id="141">141</span>
+<span id="142">142</span>
+<span id="143">143</span>
+<span id="144">144</span>
+<span id="145">145</span>
+<span id="146">146</span>
+<span id="147">147</span>
+<span id="148">148</span>
+<span id="149">149</span>
+<span id="150">150</span>
+<span id="151">151</span>
 </pre><pre class="rust">
 <span class="doccomment">//! Make the reservations</span>
 <span class="kw">use</span> <span class="kw">crate</span><span class="ident">::statistics::Statistics</span>;
@@ -114,40 +158,64 @@
 <span class="kw">use</span> <span class="ident">common::utils::get_retry_seconds</span>;
 
 <span class="kw">use</span> <span class="ident">std::sync::mpsc::Sender</span>;
-<span class="kw">use</span> <span class="ident">std::sync</span>::{<span class="ident">Arc</span>, <span class="ident">Barrier</span>};
+<span class="kw">use</span> <span class="ident">std::sync</span>::{<span class="ident">Arc</span>, <span class="ident">Condvar</span>, <span class="ident">Mutex</span>};
 <span class="kw">use</span> <span class="ident">std::thread</span>;
 <span class="kw">use</span> <span class="ident">std::time::Duration</span>;
 <span class="kw">use</span> <span class="ident">std_semaphore::Semaphore</span>;
-<span class="kw">use</span> <span class="ident">rand</span>::{<span class="ident">thread_rng</span>, <span class="ident">Rng</span>};
 
 <span class="doccomment">/// Function that makes the request to the hotel</span>
 <span class="kw">fn</span> <span class="ident">send_to_hotel</span>(
-    <span class="ident">flight</span>: <span class="ident">FlightReservation</span>,
-    <span class="ident">barrier</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">Barrier</span><span class="op">&gt;</span>,
+    <span class="ident">flight_info</span>: <span class="ident">FlightReservation</span>,
+    <span class="ident">pair</span>: <span class="ident">Arc</span><span class="op">&lt;</span>(<span class="ident">Mutex</span><span class="op">&lt;</span><span class="ident">i16</span><span class="op">&gt;</span>, <span class="ident">Condvar</span>)<span class="op">&gt;</span>,
     <span class="ident">logger_sender</span>: <span class="ident">Sender</span><span class="op">&lt;</span><span class="ident">LoggerMsg</span><span class="op">&gt;</span>,
 ) {
+    <span class="ident">logger_sender</span>
+        .<span class="ident">send</span>((
+            <span class="macro">format!</span>(<span class="string">&quot;{} | HOTEL   | Request started&quot;</span>, <span class="ident">flight_info</span>),
+            <span class="ident">LogLevel::INFO</span>,
+        ))
+        .<span class="ident">expect</span>(<span class="string">&quot;Logger mpsc not receving messages&quot;</span>);
+
     <span class="ident">simulate_hotel</span>();
     <span class="ident">logger_sender</span>
-        .<span class="ident">send</span>((<span class="macro">format!</span>(<span class="string">&quot;{} | HOTEL REQUEST   | OK&quot;</span>, <span class="ident">flight</span>), <span class="ident">LogLevel::INFO</span>))
+        .<span class="ident">send</span>((
+            <span class="macro">format!</span>(<span class="string">&quot;{} | HOTEL   | Request accepted&quot;</span>, <span class="ident">flight_info</span>),
+            <span class="ident">LogLevel::INFO</span>,
+        ))
         .<span class="ident">expect</span>(<span class="string">&quot;Logger mpsc not receving messages&quot;</span>);
-    <span class="ident">barrier</span>.<span class="ident">wait</span>();
+
+    <span class="kw">let</span> (<span class="ident">lock</span>, <span class="ident">cvar</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">pair</span>;
+    <span class="ident">cvar</span>.<span class="ident">notify_all</span>();
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">pending</span> <span class="op">=</span> <span class="ident">lock</span>.<span class="ident">lock</span>().<span class="ident">expect</span>(<span class="string">&quot;Unable to lock&quot;</span>);
+    <span class="kw-2">*</span><span class="ident">pending</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
+    <span class="ident">cvar</span>.<span class="ident">notify_all</span>();
 }
 
 <span class="doccomment">/// Function that makes the request to the airline</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// If the request was declined by the airline, we retry it in N seconds (either a default value, or the ENVVAR `RETRY_SECONDS`)</span>
 <span class="kw">fn</span> <span class="ident">send_to_airline</span>(
-    <span class="ident">flight</span>: <span class="ident">FlightReservation</span>,
+    <span class="ident">flight_info</span>: <span class="ident">FlightReservation</span>,
     <span class="ident">sem</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">Semaphore</span><span class="op">&gt;</span>,
-    <span class="ident">barrier</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">Barrier</span><span class="op">&gt;</span>,
+    <span class="ident">pair</span>: <span class="ident">Arc</span><span class="op">&lt;</span>(<span class="ident">Mutex</span><span class="op">&lt;</span><span class="ident">i16</span><span class="op">&gt;</span>, <span class="ident">Condvar</span>)<span class="op">&gt;</span>,
     <span class="ident">logger_sender</span>: <span class="ident">Sender</span><span class="op">&lt;</span><span class="ident">LoggerMsg</span><span class="op">&gt;</span>,
 ) {
+    <span class="ident">logger_sender</span>
+        .<span class="ident">send</span>((
+            <span class="macro">format!</span>(<span class="string">&quot;{} | AIRLINE | Request started&quot;</span>, <span class="ident">flight_info</span>),
+            <span class="ident">LogLevel::INFO</span>,
+        ))
+        .<span class="ident">expect</span>(<span class="string">&quot;Logger mpsc not receving messages&quot;</span>);
+
     <span class="kw">let</span> <span class="ident">retry_seconds</span> <span class="op">=</span> <span class="ident">get_retry_seconds</span>();
 
     <span class="kw">while</span> <span class="ident">simulate_airline</span>().<span class="ident">is_err</span>() {
         <span class="ident">logger_sender</span>
             .<span class="ident">send</span>((
-                <span class="macro">format!</span>(<span class="string">&quot;{} | AIRLINE REQUEST | RETRY&quot;</span>, <span class="ident">flight</span>),
+                <span class="macro">format!</span>(
+                    <span class="string">&quot;{} | AIRLINE | Request rejected ; Retry in {} seconds&quot;</span>,
+                    <span class="ident">flight_info</span>, <span class="ident">retry_seconds</span>
+                ),
                 <span class="ident">LogLevel::INFO</span>,
             ))
             .<span class="ident">expect</span>(<span class="string">&quot;Logger mpsc not receving messages&quot;</span>);
@@ -155,11 +223,19 @@
         <span class="ident">thread::sleep</span>(<span class="ident">Duration::from_secs</span>(<span class="ident">retry_seconds</span>));
     }
     <span class="ident">logger_sender</span>
-        .<span class="ident">send</span>((<span class="macro">format!</span>(<span class="string">&quot;{} | AIRLINE REQUEST | OK&quot;</span>, <span class="ident">flight</span>), <span class="ident">LogLevel::INFO</span>))
+        .<span class="ident">send</span>((
+            <span class="macro">format!</span>(<span class="string">&quot;{} | AIRLINE | Request accepted&quot;</span>, <span class="ident">flight_info</span>),
+            <span class="ident">LogLevel::INFO</span>,
+        ))
         .<span class="ident">expect</span>(<span class="string">&quot;Logger mpsc not receving messages&quot;</span>);
 
     <span class="ident">sem</span>.<span class="ident">release</span>();
-    <span class="ident">barrier</span>.<span class="ident">wait</span>();
+
+    <span class="kw">let</span> (<span class="ident">lock</span>, <span class="ident">cvar</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">pair</span>;
+    <span class="ident">cvar</span>.<span class="ident">notify_all</span>();
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">pending</span> <span class="op">=</span> <span class="ident">lock</span>.<span class="ident">lock</span>().<span class="ident">expect</span>(<span class="string">&quot;Unable to lock&quot;</span>);
+    <span class="kw-2">*</span><span class="ident">pending</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
+    <span class="ident">cvar</span>.<span class="ident">notify_all</span>();
 }
 
 <span class="doccomment">/// We make a reservation by sending the request to the airline webserver and, if we are dealing with packages, to the hotel server</span>
@@ -177,9 +253,10 @@
     <span class="kw">let</span> <span class="ident">flight_airline</span> <span class="op">=</span> <span class="ident">flight_reservation</span>.<span class="ident">clone</span>();
     <span class="kw">let</span> <span class="ident">flight_path</span> <span class="op">=</span> <span class="ident">flight_reservation</span>.<span class="ident">get_route</span>();
 
-    <span class="kw">let</span> <span class="ident">barrier</span> <span class="op">=</span> <span class="ident">Arc::new</span>(<span class="ident">Barrier::new</span>(<span class="kw">if</span> <span class="ident">flight_reservation</span>.<span class="ident">hotel</span> { <span class="number">3</span> } <span class="kw">else</span> { <span class="number">2</span> }));
-    <span class="kw">let</span> <span class="ident">barrier_hotel</span> <span class="op">=</span> <span class="ident">barrier</span>.<span class="ident">clone</span>();
-    <span class="kw">let</span> <span class="ident">barrier_airline</span> <span class="op">=</span> <span class="ident">barrier</span>.<span class="ident">clone</span>();
+    <span class="kw">let</span> <span class="ident">complete_request</span> <span class="op">=</span> <span class="ident">Arc::new</span>((<span class="ident">Mutex::new</span>(<span class="number">0</span>), <span class="ident">Condvar::new</span>()));
+    <span class="kw">let</span> <span class="ident">completed_with</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">flight_reservation</span>.<span class="ident">hotel</span> { <span class="number">2</span> } <span class="kw">else</span> { <span class="number">1</span> };
+    <span class="kw">let</span> <span class="ident">complete_request_hotel</span> <span class="op">=</span> <span class="ident">complete_request</span>.<span class="ident">clone</span>();
+    <span class="kw">let</span> <span class="ident">complete_request_airline</span> <span class="op">=</span> <span class="ident">complete_request</span>.<span class="ident">clone</span>();
 
     <span class="kw">let</span> <span class="ident">logger_sender_hotel</span> <span class="op">=</span> <span class="ident">logger_sender</span>.<span class="ident">clone</span>();
     <span class="kw">let</span> <span class="ident">logger_sender_airline</span> <span class="op">=</span> <span class="ident">logger_sender</span>.<span class="ident">clone</span>();
@@ -190,7 +267,7 @@
     <span class="kw">if</span> <span class="ident">flight_reservation</span>.<span class="ident">hotel</span> {
         <span class="ident">thread::Builder::new</span>()
             .<span class="ident">name</span>(<span class="string">&quot;hotel&quot;</span>.<span class="ident">to_string</span>())
-            .<span class="ident">spawn</span>(<span class="kw">move</span> <span class="op">|</span><span class="op">|</span> <span class="ident">send_to_hotel</span>(<span class="ident">flight_hotel</span>, <span class="ident">barrier_hotel</span>, <span class="ident">logger_sender_hotel</span>))
+            .<span class="ident">spawn</span>(<span class="kw">move</span> <span class="op">|</span><span class="op">|</span> <span class="ident">send_to_hotel</span>(<span class="ident">flight_hotel</span>, <span class="ident">complete_request_hotel</span>, <span class="ident">logger_sender_hotel</span>))
             .<span class="ident">expect</span>(<span class="string">&quot;thread creation failed&quot;</span>);
     }
 
@@ -200,18 +277,29 @@
             <span class="ident">send_to_airline</span>(
                 <span class="ident">flight_airline</span>,
                 <span class="ident">rate_limit</span>,
-                <span class="ident">barrier_airline</span>,
+                <span class="ident">complete_request_airline</span>,
                 <span class="ident">logger_sender_airline</span>,
             )
         })
         .<span class="ident">expect</span>(<span class="string">&quot;thread creation failed&quot;</span>);
 
-    <span class="ident">barrier</span>.<span class="ident">wait</span>();
+    <span class="kw">let</span> (<span class="ident">lock</span>, <span class="ident">cvar</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">complete_request</span>;
 
-    <span class="ident">logger_sender</span>
-        .<span class="ident">send</span>((<span class="macro">format!</span>(<span class="string">&quot;{} | FINISH&quot;</span>, <span class="ident">flight_reservation</span>), <span class="ident">LogLevel::INFO</span>))
-        .<span class="ident">expect</span>(<span class="string">&quot;Logger mpsc not receving messages&quot;</span>);
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">completed</span> <span class="op">=</span> <span class="ident">lock</span>.<span class="ident">lock</span>().<span class="ident">expect</span>(<span class="string">&quot;Unable to lock&quot;</span>);
+    <span class="kw">while</span> <span class="kw-2">*</span><span class="ident">completed</span> <span class="op">!</span><span class="op">=</span> <span class="ident">completed_with</span> {
+        <span class="ident">completed</span> <span class="op">=</span> <span class="ident">cvar</span>.<span class="ident">wait</span>(<span class="ident">completed</span>).<span class="ident">expect</span>(<span class="string">&quot;Error on wait condvar&quot;</span>);
+    }
     <span class="ident">statistics</span>.<span class="ident">add_flight_reservation</span>(<span class="ident">start_time</span>, <span class="ident">flight_path</span>);
+    <span class="ident">logger_sender</span>
+        .<span class="ident">send</span>((
+            <span class="macro">format!</span>(
+                <span class="string">&quot;{} | FINISH  | The flight was processed in {} millis. &quot;</span>,
+                <span class="ident">flight_reservation</span>,
+                <span class="ident">start_time</span>.<span class="ident">elapsed</span>().<span class="ident">as_millis</span>()
+            ),
+            <span class="ident">LogLevel::INFO</span>,
+        ))
+        .<span class="ident">expect</span>(<span class="string">&quot;Logger mpsc not receving messages&quot;</span>);
 }
 </pre></div>
 </section><section id="search" class="content hidden"></section><div id="rustdoc-vars" data-root-path="../../" data-current-crate="threads" data-search-index-js="../../search-index.js" data-search-js="../../search.js"></div>

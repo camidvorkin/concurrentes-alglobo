@@ -1,1 +1,0 @@
-initSidebarItems({"fn":[["get_hotel_address","Creates one Hotel Server which allows `rate_limite` amount of requests at the same time. Returns the `Addr` of the created servers."]],"struct":[["Hotel",""]]});
