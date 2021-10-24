@@ -29,7 +29,7 @@ impl Statistics {
     pub fn add_flight_reservation(&mut self, start_time: std::time::Instant, destination: String) -> i64 {
         {
             let diff = start_time.elapsed().as_millis() as i64;
-            let mut sum_time = self.sum_time.write().unwrap();
+            let mut sum_time = self.sum_time.write().expect("Failed to read from RwLock");
             *sum_time += diff;
 
             let mut map = self.destinations.write().expect("RwLock poisoned");
@@ -38,21 +38,24 @@ impl Statistics {
         }
     }
 
-    pub fn get_total_count(&self) -> i64 {
+    fn get_total_count(&self) -> i64 {
         let mut count = 0;
-        let map = self.destinations.read().unwrap();
+        let map = self
+            .destinations
+            .read()
+            .expect("Failed to read from RwLock");
         for (_k, v) in map.iter() {
             count += v;
         }
         count
     }
 
-    pub fn get_sum_time(&self) -> i64 {
-        let sum_time = self.sum_time.read().unwrap();
+    fn get_sum_time(&self) -> i64 {
+        let sum_time = self.sum_time.read().expect("Failed to read from RwLock");
         *sum_time
     }
 
-    pub fn get_avg_time(&self) -> f64 {
+    fn get_avg_time(&self) -> f64 {
         let sum_time = self.get_sum_time();
         let count = self.get_total_count();
         if count == 0 {
@@ -61,8 +64,11 @@ impl Statistics {
         (sum_time / count) as f64
     }
 
-    pub fn get_top_destinations(&self, n: usize) -> Vec<(String, i64)> {
-        let map = self.destinations.read().unwrap();
+    fn get_top_destinations(&self, n: usize) -> Vec<(String, i64)> {
+        let map = self
+            .destinations
+            .read()
+            .expect("Failed to read from RwLock");
         let mut top_destinations = map
             .iter()
             .map(|(k, v)| (k.clone(), *v))

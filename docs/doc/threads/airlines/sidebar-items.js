@@ -1,0 +1,1 @@
+initSidebarItems({"fn":[["from_file","Read from a CSV file with airlines and their max number of concurrent requests as columns and convert it into our Airlines type"]],"type":[["Airlines","Keep track of how many threads can each airline handle"]]});

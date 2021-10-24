@@ -1,0 +1,1 @@
+initSidebarItems({"fn":[["from_file","Read CSV file with all the flights requests and return a vector of every FlightReservation"]],"struct":[["FlightReservation","Struct"]]});

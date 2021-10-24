@@ -1,6 +1,7 @@
 //! Make the reservations
 use crate::statistics::Statistics;
 use common::flight_reservation::FlightReservation;
+use common::logger::{LogLevel, LoggerMsg};
 use common::simulate_requests::{simulate_airline, simulate_hotel};
 use common::utils::get_retry_seconds;
 
@@ -14,15 +15,13 @@ use std_semaphore::Semaphore;
 fn send_to_hotel(
     flight_info: FlightReservation,
     pair: Arc<(Mutex<i16>, Condvar)>,
-    logger_sender: Sender<String>,
+    logger_sender: Sender<LoggerMsg>,
 ) {
     simulate_hotel();
-    let s = format!("[{}] Hotel Reservation: OK", flight_info.to_string());
     logger_sender
-        .send(s)
+        .send((format!("{} | HOTEL REQUEST   | OK", flight_info.to_string()), LogLevel::INFO))
         .expect("Logger mpsc not receving messages");
-    ();
-    
+
     let (lock, cvar) = &*pair;
     cvar.notify_all();
     let mut pending = lock.lock().unwrap();
@@ -34,26 +33,27 @@ fn send_to_hotel(
 ///
 /// If the request was declined by the airline, we retry it in N seconds (either a default value, or the ENVVAR `RETRY_SECONDS`)
 fn send_to_airline(
-    flight_info: FlightReservation,
+    flight: FlightReservation,
     sem: Arc<Semaphore>,
     pair: Arc<(Mutex<i16>, Condvar)>,
-    logger_sender: Sender<String>,
+    logger_sender: Sender<LoggerMsg>,
 ) {
     let retry_seconds = get_retry_seconds();
 
-    while let Err(_) = simulate_airline() {
-        let s = format!("[{}] Flight Reservation: RETRY", flight_info.to_string());
+    while simulate_airline().is_err() {
         logger_sender
-            .send(s)
+            .send((
+                format!("{} | AIRLINE REQUEST | RETRY", flight),
+                LogLevel::INFO,
+            ))
             .expect("Logger mpsc not receving messages");
-        ();
+
         thread::sleep(Duration::from_secs(retry_seconds));
     }
-    let s = format!("[{}] Flight Reservation: OK", flight_info.to_string());
     logger_sender
-        .send(s)
+        .send((format!("{} | AIRLINE REQUEST | OK", flight), LogLevel::INFO))
         .expect("Logger mpsc not receving messages");
-    ();
+
     sem.release();
     
     let (lock, cvar) = &*pair;
@@ -70,7 +70,7 @@ pub fn reserve(
     flight_reservation: FlightReservation,
     rate_limit: Arc<Semaphore>,
     mut statistics: Statistics,
-    logger_sender: Sender<String>,
+    logger_sender: Sender<LoggerMsg>,
 ) {
     let start_time = std::time::Instant::now();
 
@@ -89,7 +89,6 @@ pub fn reserve(
     rate_limit.acquire();
 
     // Send request to the airline and hotel (if requested) concurrently
-
     if flight_reservation.hotel {
         thread::Builder::new()
             .name("hotel".to_string())
@@ -98,7 +97,7 @@ pub fn reserve(
     }
 
     thread::Builder::new()
-        .name(flight_reservation.airline)
+        .name(flight_reservation.clone().airline)
         .spawn(move || {
             send_to_airline(
                 flight_airline,
@@ -116,9 +115,8 @@ pub fn reserve(
         completed = cvar.wait(completed).unwrap();
     }
 
-    let stat = statistics.add_flight_reservation(start_time, flight_path.clone());
+    statistics.add_flight_reservation(start_time, flight_path.clone());
     logger_sender
-        .send(format!("New stat added for [{}], was executed in {} millis", flight_path, stat))
+        .send((format!("{} | FINISH", flight_reservation.to_string()), LogLevel::INFO))
         .expect("Logger mpsc not receving messages");
-    ();
 }

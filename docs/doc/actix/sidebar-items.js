@@ -1,0 +1,1 @@
+initSidebarItems({"fn":[["main",""]],"mod":[["airline","Handle airlines config"],["hotel","Handle airlines config"],["info_flight",""],["stats_actor",""]]});

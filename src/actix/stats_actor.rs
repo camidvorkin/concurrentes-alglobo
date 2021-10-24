@@ -1,13 +1,16 @@
 use actix::prelude::*;
-use common::flight_reservation::FlightReservation;
+use common::{
+    flight_reservation::FlightReservation,
+    logger::{self, LogLevel},
+};
 use std::collections::HashMap;
 
 pub const STATS_FREQUENCY: i64 = 5;
 
 pub struct StatsActor {
-    pub sum_time: i64,
-    pub destinations: HashMap<String, i64>,
-    pub flights: HashMap<i32, i32>,
+    sum_time: i64,
+    destinations: HashMap<String, i64>,
+    flights: HashMap<i32, i32>,
 }
 
 impl Actor for StatsActor {
@@ -15,6 +18,14 @@ impl Actor for StatsActor {
 }
 
 impl StatsActor {
+    pub fn new() -> StatsActor {
+        StatsActor {
+            sum_time: 0,
+            destinations: HashMap::<String, i64>::new(),
+            flights: HashMap::<i32, i32>::new(),
+        }
+    }
+
     fn get_total_count(&self) -> i64 {
         let mut count = 0;
         for (_k, v) in self.destinations.iter() {
@@ -97,6 +108,10 @@ impl Handler<Stat> for StatsActor {
         {
             self.add_stat(msg.elapsed_time, msg.flight_reservation.get_route());
             self.flights.remove(&msg.flight_reservation.id);
+            logger::log(
+                format!("{} | FINISH", msg.flight_reservation),
+                LogLevel::INFO,
+            );
         }
 
         if self.get_total_count() > 0 && (self.get_total_count() % STATS_FREQUENCY) == 0 {

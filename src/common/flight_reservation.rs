@@ -1,11 +1,11 @@
 //! Flight Reservations Struct
 use crate::utils::read_file;
 use serde::Deserialize;
-use std::string::ToString;
+use std::fmt;
 /// Struct
 ///
 /// This struct can be deserialized from a JSON (thanks to serde), making it easier to use, because we now can receive it from the web request in a JSON form
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 pub struct FlightReservation {
     #[serde(skip)]
     pub id: i32,
@@ -15,15 +15,14 @@ pub struct FlightReservation {
     pub hotel: bool,
 }
 
-impl ToString for FlightReservation {
-    fn to_string(&self) -> String {
+impl fmt::Display for FlightReservation {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut string = format!("{}->{}", self.origin, self.destination);
-        if self.hotel {
-            string += &format!(" ({}+)", self.airline)
-        } else {
-            string += &format!(" ({})", self.airline)
+        match self.hotel {
+            true => string += &format!("({}+)", self.airline),
+            false => string += &format!("({})", self.airline),
         }
-        string
+        write!(f, "{}", string)
     }
 }
 
@@ -52,10 +51,10 @@ pub fn from_file(filename: &str) -> Vec<FlightReservation> {
     for (i, flight) in flights_reservations.iter().enumerate() {
         flights.push(FlightReservation {
             id: i as i32,
-            origin: flight[0].clone(),
-            destination: flight[1].clone(),
-            airline: flight[2].clone(),
-            hotel: flight[3].clone() == "true",
+            origin: flight[0].to_owned(),
+            destination: flight[1].to_owned(),
+            airline: flight[2].to_owned(),
+            hotel: flight[3] == "true",
         });
     }
     flights

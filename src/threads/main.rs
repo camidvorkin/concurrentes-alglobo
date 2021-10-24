@@ -32,17 +32,19 @@ use std::sync::mpsc::{self, Receiver, Sender};
 mod airlines;
 mod alglobo;
 
+use actix_web::rt::System;
 use common::flight_reservation::FlightReservation;
 mod statistics;
 use actix_web::{post, web, App, HttpResponse, HttpServer};
 use airlines::Airlines;
-use common::logger;
+use common::logger::LogLevel;
+use common::logger::{self, LoggerMsg};
 use common::AIRLINES_FILE;
 use statistics::Statistics;
 
 use std::thread;
 mod keyboard;
-use keyboard::keyboard_listener;
+use keyboard::keyboard_loop;
 
 #[cfg(test)]
 mod test;
@@ -51,71 +53,127 @@ mod test;
 struct AppState {
     airlines: Airlines,
     statistics: Statistics,
-    logger_sender: Sender<String>,
+    logger_sender: Sender<LoggerMsg>,
 }
 
 /// The main function. It starts a thread for the keyboard listener, and it starts the actix-web server
 #[actix_web::main]
-async fn main() -> std::io::Result<()> {
-    let (logger_sender, logger_receiver): (Sender<String>, Receiver<String>) = mpsc::channel();
+async fn main() {
+    // We create a mpsc for the HTTP Server, so that we can run it on its own thread and then gracefully shut it down
+    // https://actix.rs/docs/server/
+    let (server_sender, server_receiver) = mpsc::channel();
 
-    thread::Builder::new()
+    let (logger_sender, logger_receiver): (Sender<LoggerMsg>, Receiver<LoggerMsg>) =
+        mpsc::channel();
+    let logger_sender_webserver = logger_sender.clone();
+
+    let _logger_thread = thread::Builder::new()
         .name("logger".to_string())
-        .spawn(move || loop {
+        .spawn(move || {
             logger::init();
-            let s = logger_receiver
-                .recv()
-                .expect("Logger mpsc couldn't receive message");
 
-            logger::log(s);
+            while let Ok((msg, loglevel)) = logger_receiver.recv() {
+                logger::log(msg, loglevel);
+                if let LogLevel::FINISH = loglevel {
+                    break;
+                }
+            }
         })
         .expect("thread creation failed");
 
     let airlines = airlines::from_file(AIRLINES_FILE);
+    logger_sender
+        .send(("Airlines CSV files processed".to_string(), LogLevel::TRACE))
+        .expect("Logger mpsc not receving messages");
+
     let statistics = Statistics::new();
-    let statistics_keyboard = statistics.clone();
     let statistics_webserver = statistics.clone();
 
-    thread::Builder::new()
-        .name("keyboard".to_string())
-        .spawn(move || keyboard_listener(statistics_keyboard))
+    // This thread gets terminated when calling server.stop()
+    // https://docs.rs/actix-web/0.3.3/actix_web/server/struct.StopServer.html
+    let _server_thread = thread::Builder::new()
+        .name("http-server".to_string())
+        .spawn(move || {
+            let sys = System::new("http-server");
+
+            logger_sender_webserver
+                .send(("Server thread started".to_string(), LogLevel::TRACE))
+                .expect("Logger mpsc not receving messages");
+
+            let srv = HttpServer::new(move || {
+                App::new()
+                    .data(AppState {
+                        airlines: airlines.to_owned(),
+                        statistics: statistics_webserver.to_owned(),
+                        logger_sender: logger_sender_webserver.to_owned(),
+                    })
+                    .service(reservation)
+            })
+            .shutdown_timeout(5)
+            .bind(("127.0.0.1", 8080))
+            .expect("Server couldn't start")
+            .run();
+
+            let _ = server_sender.send(srv);
+            sys.run()
+        })
         .expect("thread creation failed");
 
-    HttpServer::new(move || {
-        App::new()
-            .data(AppState {
-                airlines: airlines.to_owned(),
-                statistics: statistics_webserver.to_owned(),
-                logger_sender: logger_sender.clone(),
-            })
-            .service(reservation)
-    })
-    .bind(("127.0.0.1", 8080))?
-    .run()
-    .await
+    logger_sender
+        .send(("Keyboard started listening".to_string(), LogLevel::TRACE))
+        .expect("Logger mpsc not receving messages");
+
+    // Reference to the server, so that we can then shut it down
+    let srv = server_receiver
+        .recv()
+        .expect("Couldn't receive server ref through mpsc");
+
+    // This is an infinite loop that only exits on a QUIT command
+    // Anything after this line is part of the graceful shutdown
+    keyboard_loop(statistics, &logger_sender);
+
+    logger_sender
+        .send(("Shut down server".to_string(), LogLevel::FINISH))
+        .expect("Logger mpsc not receving messages");
+
+    // We stop the server, which joins the server thread (and therefore drops any lingering mpsc ref we have)
+    // This is a graceful shutdown, so any request still in place will be completed before shutdown
+    srv.stop(true).await;
 }
 
 /// This documentation isn't showing anywhere on rustdoc :(
 #[post("/")]
 fn reservation(req: web::Json<FlightReservation>, appstate: web::Data<AppState>) -> HttpResponse {
-    let flight: FlightReservation = req.clone();
+    appstate
+        .logger_sender
+        .send((format!("GET / -- {:?}", req), LogLevel::TRACE))
+        .expect("Logger mpsc not receving messages");
+
+    let flight: FlightReservation = req.to_owned();
     let semaphore = appstate.airlines.get(&req.airline);
     match semaphore {
         None => {
-            return HttpResponse::NotAcceptable()
-                .body("Airline not present on server configuration");
+            appstate
+                .logger_sender
+                .send((
+                    format!("{} | BAD REQUEST | Airport not present", flight.to_string()),
+                    LogLevel::INFO,
+                ))
+                .expect("Logger mpsc not receving messages");
+
+            HttpResponse::NotAcceptable().body("Airline not present on server configuration")
         }
         Some(semaphore) => {
             appstate
                 .logger_sender
-                .send(format!("[{}] New Request", flight.to_string()))
+                .send((format!("{} | START", flight.to_string()), LogLevel::INFO))
                 .expect("Logger mpsc not receving messages");
 
             alglobo::reserve(
                 flight,
-                semaphore.clone(),
-                appstate.statistics.clone(),
-                appstate.logger_sender.clone(),
+                semaphore.to_owned(),
+                appstate.statistics.to_owned(),
+                appstate.logger_sender.to_owned(),
             );
 
             HttpResponse::Ok().finish()

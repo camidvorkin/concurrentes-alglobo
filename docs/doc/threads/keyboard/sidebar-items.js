@@ -1,0 +1,1 @@
+initSidebarItems({"constant":[["QUIT_COMMANDS","Possible command strings that trigger the exit action"],["STAT_COMMANDS","Possible command strings that trigger the show stats action"]],"fn":[["keyboard_loop","Listents to `s` (show stats) and `q` (quit) commands"]]});

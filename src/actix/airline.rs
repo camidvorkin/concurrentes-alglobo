@@ -4,7 +4,7 @@ extern crate actix;
 use crate::info_flight::InfoFlight;
 use crate::stats_actor::{Stat, StatsActor};
 use actix::{Actor, Addr, Handler, SyncArbiter, SyncContext};
-use common::logger;
+use common::logger::{self, LogLevel};
 use common::simulate_requests::simulate_airline;
 use common::utils::{get_retry_seconds, read_file};
 
@@ -31,26 +31,23 @@ impl Handler<InfoFlight> for Airline {
     fn handle(&mut self, msg: InfoFlight, _ctx: &mut Self::Context) -> Self::Result {
         let retry_seconds = get_retry_seconds();
 
-        logger::log(format!(
-            "Starting Request to Airline {} for route: [{}]",
-            msg.flight_reservation.airline,
-            msg.flight_reservation.get_route()
-        ));
-
-        while let Err(_) = simulate_airline() {
-            logger::log(format!("Request to airline faileddd").to_string());
+        while simulate_airline().is_err() {
+            logger::log(
+                format!("{} | AIRLINE REQUEST   | RETRY", msg.flight_reservation),
+                LogLevel::INFO,
+            );
             thread::sleep(Duration::from_secs(retry_seconds));
         }
 
-        match self.addr_statistics.try_send(Stat {
+        logger::log(
+            format!("{} | AIRLINE REQUEST   | OK", msg.flight_reservation),
+            LogLevel::INFO,
+        );
+
+        let _ = self.addr_statistics.try_send(Stat {
             elapsed_time: msg.start_time.elapsed().as_millis(),
-            flight_reservation: msg.flight_reservation.clone(),
-        }) {
-            Ok(_) => {}
-            Err(_) => {
-                logger::log("StatsActor failed to receive message".to_string());
-            }
-        };
+            flight_reservation: msg.flight_reservation,
+        });
     }
 }
 
@@ -61,22 +58,16 @@ pub fn from_file(
     filename: &str,
     addr_statistics: Addr<StatsActor>,
 ) -> HashMap<String, Addr<Airline>> {
-    let airlines = read_file(filename).unwrap();
+    let airlines = read_file(filename).expect("Couldn't read airline file");
     let mut airline_map = HashMap::<String, Addr<Airline>>::new();
     for airline in airlines {
         let addr_statistics_airline = addr_statistics.clone();
-        logger::log(
-            format!(
-                "Creating Airline Server for {} with rate limite {}",
-                airline[0].to_string(),
-                airline[1].to_string()
-            )
-            .to_string(),
-        );
-        let airline_actor =
-            SyncArbiter::start(airline[1].parse::<usize>().unwrap(), move || Airline {
+        let airline_actor = SyncArbiter::start(
+            airline[1].parse::<usize>().expect("Couldn't parse airline"),
+            move || Airline {
                 addr_statistics: addr_statistics_airline.to_owned(),
-            });
+            },
+        );
         airline_map.insert(airline[0].to_string(), airline_actor);
     }
     airline_map
