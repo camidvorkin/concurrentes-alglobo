@@ -105,7 +105,6 @@ async fn main() {
                     })
                     .service(reservation)
             })
-            .shutdown_timeout(5)
             .bind(("127.0.0.1", 8080))
             .expect("Server couldn't start")
             .run();
@@ -128,13 +127,13 @@ async fn main() {
     // Anything after this line is part of the graceful shutdown
     keyboard_loop(statistics, &logger_sender);
 
-    logger_sender
-        .send(("Shut down server".to_string(), LogLevel::FINISH))
-        .expect("Logger mpsc not receving messages");
-
     // We stop the server, which joins the server thread (and therefore drops any lingering mpsc ref we have)
     // This is a graceful shutdown, so any request still in place will be completed before shutdown
     srv.stop(true).await;
+
+    logger_sender
+        .send(("Shut down server".to_string(), LogLevel::FINISH))
+        .expect("Logger mpsc not receving messages");
 }
 
 /// This documentation isn't showing anywhere on rustdoc :(
