@@ -23,18 +23,26 @@ async fn main() {
         Some(val) => val,
         None => TEST_FLIGHTS_FILE.to_string(),
     };
+
     let flights = flight_reservation::from_file(&flights_file);
+    logger::log(format!("{} file proccessed", flights_file), LogLevel::TRACE);
 
     let addr_statistics = StatsActor::new().start();
+    logger::log("StatsActor created".to_string(), LogLevel::TRACE);
     let addr_statistics_hotel = addr_statistics.clone();
     let addr_statistics_airline = addr_statistics.clone();
 
     let addr_airlines = airline::from_file(AIRLINES_FILE, addr_statistics_airline);
+    logger::log("Airlines file proccessed".to_string(), LogLevel::TRACE);
 
     let hotel_count = flights.iter().filter(|f| f.hotel).count();
     let addr_hotel = SyncArbiter::start(hotel_count, move || Hotel {
         addr_statistics: addr_statistics_hotel.to_owned(),
     });
+    logger::log(
+        format!("Hotel SyncArbier with {} count created", hotel_count),
+        LogLevel::TRACE,
+    );
 
     // Vector of futures to wait for the end of the process
     type AirlineReq = Request<Airline, InfoFlight>;
@@ -86,4 +94,5 @@ async fn main() {
     }
 
     let _finish = addr_statistics.send(FinishMessage).await;
+    logger::log("Shut down".to_string(), LogLevel::FINISH);
 }
