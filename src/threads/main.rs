@@ -31,6 +31,7 @@
 use std::sync::mpsc::{self, Receiver, Sender};
 mod airlines;
 mod alglobo;
+
 use common::flight_reservation::FlightReservation;
 mod statistics;
 use actix_web::{post, web, App, HttpResponse, HttpServer};
@@ -42,6 +43,9 @@ use statistics::Statistics;
 use std::thread;
 mod keyboard;
 use keyboard::keyboard_listener;
+
+#[cfg(test)]
+mod test;
 
 /// This is the shared state that will be shared across every thread listening to new requests: the airlines configurations and the universal stats entity
 struct AppState {
