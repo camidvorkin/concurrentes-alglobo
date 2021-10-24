@@ -2,10 +2,11 @@ use std::fs::OpenOptions;
 use std::io::Write;
 
 const FILENAME: &str = "alglobo.log";
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum LogLevel {
     TRACE,
     INFO,
+    FINISH,
 }
 
 pub type LoggerMsg = (String, LogLevel);
@@ -28,13 +29,13 @@ pub fn log(msg: String, loglevel: LogLevel) {
     if let LogLevel::INFO = loglevel {
         println!("{}", msg)
     };
-    // We want to have the loglevel on exactly 5 characters, so that `| TRACE |` and `| INFO  |` have the same width.
+    // We want to have the loglevel on exactly N characters, so that `| TRACE  |` and `|  INFO  |` and `| FINISH |` have the same width.
     // This formatting only works with strings, not debug strings
     // i.e. {:^7} works, but {:^7?} does not
     // So we first do some format! shenanigans to convert the debug string to a string
     let loglevelstr = format!("{:?}", loglevel);
 
-    let msg = format!("{} | {:^5} | {} \n", chrono::Local::now(), loglevelstr, msg);
+    let msg = format!("{} | {:<6} | {} \n", chrono::Local::now(), loglevelstr, msg);
     file.write_all(msg.as_bytes())
         .expect("Unable to write data");
 }
