@@ -37,7 +37,7 @@ impl Statistics {
         }
     }
 
-    pub fn get_total_count(&self) -> i64 {
+    fn get_total_count(&self) -> i64 {
         let mut count = 0;
         let map = self
             .destinations

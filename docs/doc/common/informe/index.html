@@ -6,8 +6,8 @@
 <h2 id="enunciado" class="section-header"><a href="#enunciado">Enunciado</a></h2>
 <p><em>Implementar la aplicación utilizando las herramientas de concurrencia de la biblioteca standard de Rust vistas en clase: Mutex, RwLock, Semáforos (del crate std-semaphore), Channels, Barriers y Condvars.</em></p>
 <h2 id="resolución" class="section-header"><a href="#resolución">Resolución</a></h2><h3 id="estructuras" class="section-header"><a href="#estructuras">Estructuras</a></h3><h4 id="flight-reservation" class="section-header"><a href="#flight-reservation">Flight Reservation</a></h4>
-<p>En primer lugar, se crea una estructura que representa una reserva de vuelo. A cada vuelo ingresado por consola, se le asignara un ID para ayudarnos a identificarlo.
-Ademas, la estructura cuenta con la información necesaria para que el vuelo se pueda reservar con las configuraciones pedidas. Se almacenara su origen y destino, la aerolinea correspondiente a la que se le realizara el request y si el pedido incluye o no la reserva de hotel.</p>
+<p>En primer lugar, se crea una estructura que representa una reserva de vuelo. A cada vuelo ingresado por consola, se le asignará un ID para ayudarnos a identificarlo.
+Además, la estructura cuenta con la información necesaria para que el vuelo se pueda reservar con las configuraciones pedidas. Se almacenará su origen y destino, la aerolínea correspondiente a la que se le realizará el requisito y si el pedido incluye o no la reserva de hotel.</p>
 
 <div class="example-wrap"><pre class="rust rust-example-rendered">
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">FlightReservation</span> {
@@ -18,22 +18,22 @@ Ademas, la estructura cuenta con la información necesaria para que el vuelo se 
    <span class="kw">pub</span> <span class="ident">hotel</span>: <span class="ident">bool</span>,
 }</pre></div>
 <h4 id="statistics" class="section-header"><a href="#statistics">Statistics</a></h4>
-<p>Estructura que contiene las estadísticas de la aplicación. Por un lado, contamos con un acumulador de tiempo para poder estimar el tiempo promedio que toma una reserva desde que ingresa el pedido hasta que es finalmente aceptada. Por otro lado, un <code>HashMap</code> en donde se iran guardando todas las rutas (origen - destino) realizadas para poder llevar una estadística de las rutas mas frecuentes.</p>
+<p>Estructura que contiene las estadísticas de la aplicación. Por un lado, contamos con un acumulador de tiempo para poder estimar el tiempo promedio que toma una reserva desde que ingresa el pedido hasta que es finalmente aceptada. Por otro lado, un <code>HashMap</code> en donde se irán guardando todas las rutas (origen - destino) realizadas para poder llevar una estadística de las rutas más frecuentes.</p>
 
 <div class="example-wrap"><pre class="rust rust-example-rendered">
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Statistics</span> {
    <span class="ident">sum_time</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">RwLock</span><span class="op">&lt;</span><span class="ident">i64</span><span class="op">&gt;</span><span class="op">&gt;</span>,
    <span class="ident">destinations</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">RwLock</span><span class="op">&lt;</span><span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">String</span>, <span class="ident">i64</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 }</pre></div>
-<p>Como se puede ver en la estructura, ambas estructuras son <code>Arc</code> para que se puedan usar en varios threads. Ademas, se usa <code>RwLock</code> para proveer seguridad a la hora de leer y escribir en las mismas. Esto se debe a que todos los pedidos que ingresan al sistema van a estar intentando acceder a los recursos de estadisticas, es por eso que es necesario el uso de un mecanismo de sincronismo para que no haya conflictos. <code>RwLock</code> nos va a permitir tener un escritor (lock exlusivo) o varios lectores a la vez(lock compartido).</p>
+<p>Como se puede ver en la estructura, ambas estructuras son <code>Arc</code> para que se puedan usar en varios threads. Además, se usa <code>RwLock</code> para proveer seguridad a la hora de leer y escribir en las mismas. Esto se debe a que todos los pedidos que ingresan al sistema van a estar intentando acceder a los recursos de estadísticas, es por eso que es necesario el uso de un mecanismo de sincronismo para que no haya conflictos. <code>RwLock</code> nos va a permitir tener un escritor (lock exclusivo) o varios lectores a la vez(lock compartido).</p>
 <h4 id="appstate" class="section-header"><a href="#appstate">AppState</a></h4>
-<p>Esta última estructura se trata del estado compartido que se compartirá en cada thread que escuche nuevas solicitudes. 
-La estrcutura contiene:</p>
+<p>Esta última estructura se trata del estado compartido que se compartirá en cada thread que escuche nuevas solicitudes.
+La estructura contiene:</p>
 <ul>
-<li>Las aereolinas del tipo <code>Airlines</code>, que se trata de un mapa de todas las Aereolineas con webservice disponibles en nuestro sistema. <code>Airlines</code> es un <code>HashMap</code> de tipo <code>&lt;String, Arc&lt;Semaphore&gt;&gt;</code>, en donde la clave es el nombre de la aereolinea. Y el valor es lo que simula ser el webservice, en este caso, un <code>Semaphore</code> que nos permitirá controlar la cantidad de solicitudes que se pueden realizar a cada webservice, teniendo en cuenta que cada aereolinea cuenta con un <code>rate_limit</code>. 
-Este mapa se popula a partir de un archivo <code>src/configs/airlines.txt</code>, el cual indica todos los nombres de las aereolineas junto a los N pedidos que puede responder de forma concurrente.</li>
+<li>Las aerolíneas del tipo <code>Airlines</code>, que se trata de un mapa de todas las Aerolíneas con webservice disponibles en nuestro sistema. <code>Airlines</code> es un <code>HashMap</code> de tipo <code>&lt;String, Arc&lt;Semaphore&gt;&gt;</code>, en donde la clave es el nombre de la aerolínea. Y el valor es lo que simula ser el webservice, en este caso, un <code>Semaphore</code> que nos permitirá controlar la cantidad de solicitudes que se pueden realizar a cada webservice, teniendo en cuenta que cada aerolínea cuenta con un <code>rate limit</code>.
+Este mapa se popular a partir de un archivo <code>src/configs/airlines.txt</code>, el cual indica todos los nombres de las aerolíneas junto a los N pedidos que puede responder de forma concurrente.</li>
 <li>La estructura de estadísticas <code>Statistics</code> para poder acceder y agregar estadísticas a la aplicación.</li>
-<li>El <code>logger_sender</code> para poder enviar mensajes al canal de logs desde cada thread. Para lograr este pasaje de mensajes al canal de logs, se usa un <code>Sender</code> que permite enviar mensajes al otro lado del canal (multiples consumidores y un solo productor).</li>
+<li>El <code>logger sender</code> para poder enviar mensajes al canal de logs desde cada thread. Para lograr este pasaje de mensajes al canal de logs, se usa un <code>Sensor</code> que permite enviar mensajes al otro lado del canal (múltiples consumidores y un solo productor).</li>
 </ul>
 
 <div class="example-wrap"><pre class="rust rust-example-rendered">
@@ -43,27 +43,27 @@ Este mapa se popula a partir de un archivo <code>src/configs/airlines.txt</code>
     <span class="ident">logger_sender</span>: <span class="ident">Sender</span><span class="op">&lt;</span><span class="ident">LoggerMsg</span><span class="op">&gt;</span>,
 }</pre></div>
 <h3 id="implementación" class="section-header"><a href="#implementación">Implementación</a></h3><h4 id="inicialización" class="section-header"><a href="#inicialización">Inicialización</a></h4>
-<p>El main esta compuesto por una serie de threads con diferentes tareas: </p>
+<p>El main esta compuesto por una serie de threads con diferentes tareas:</p>
 <ul>
-<li><code>logger</code>: El primer thread que se abre es el logger, que se encarga de escribir tanto por consola como en el archivo de loggueo, los mensajes que se van a ir recibiendo. Como se explico previamente, esto esta implementado con un <code>mpsc::channel</code> con el objetivo que desde cualquier lugar de la aplicación se pueda enviar mensajes con el <code>Sender</code> y desde el thread <code>logger</code> los mensajes sean leidos por el <code>Receiver</code>.</li>
+<li><code>logger</code>: El primer thread que se abre es el logger, que se encarga de escribir tanto por consola como en el archivo de logueo, los mensajes que se van a ir recibiendo. Como se explicó previamente, esto está implementado con un <code>mpsc::channel</code> con el objetivo que desde cualquier lugar de la aplicación se pueda enviar mensajes con el <code>Sender</code> y desde el thread <code>logger</code> los mensajes sean leídos por el <code>Receiver</code>.</li>
 <li><code>http-server</code>: Se hace uso de Actix web para recibir requests reales por consola, por lo que este thread crea la App con el estado de la aplicación <code>AppState</code> y se queda a la espera de requests para resolverlos.</li>
-<li><code>keyboard-loop</code>: Por último, por detras tenemos al keyboard que se encarga de recibir dos posibles comandos: ‘S’/‘STATS’ que nos permitirá mostrar las estadísticas de la aplicación, y ‘Q’/‘QUIT’ que nos permitirá salir de la aplicación.</li>
+<li><code>keyboard-loop</code>: Por último, por detrás tenemos al keyboard que se encarga de recibir dos posibles comandos: ‘S’/‘STATS’ que nos permitirá mostrar las estadísticas de la aplicación, y ‘Q’/‘QUIT’ que nos permitirá salir de la aplicación.</li>
 </ul>
 <h4 id="aplicación" class="section-header"><a href="#aplicación">Aplicación</a></h4>
-<p>Una vez que ya tenemos todo el sistema inicializado, nuestro sistema ya esta listo para recibir nuevos requests. Si todos los parametros ingresados son correctos, se procede a realizar la reserva. Si no, se muestra un mensaje de error.</p>
-<p>La lógica de la aplicación se encuentra en el archivo <code>src/threads/alglobo.rs</code> . En primer lugar se abre un nuevo thread para poder ejecutar concurrentemente el request a la aereolinea por un lado y por el otro lado el request al hotel si el mismo lo requiere(en caso de que el pedido incluya el modo de paquete completo).</p>
-<p>En el caso de que la reserva sea por paquete, el pedido se envia al webservice del hotel y como sus reservas nunca se rechazan, el tiempo que tarda en procesar la respuesta simplemente se simula con un sleep de un tiempo random.</p>
-<p>De forma simultanea, se envia el pedido a la aereolinea correspondiente. El tiempo que demora en realizar el request va a depender de la cantidad de request que soporta la aereolinea concurrentemente, ya que si la misma esta respondiendo la cantidad maxima de pedidos, el request de la aereolinea se va a bloquear y debera esperar a que un pedido anterior termine. Esto esta resuelto por el mismo semaforo que solo le va a permitir acceso a los pedidos si su contador interno es positivo, cada pedido que ingresa adquiere el semaforo decrementando en uno el contador, una vez que finaliza el pedido se incrementa el contador desbloqueando un hilo. 
-Ademas la aerolínea puede aceptar el pedido o recharzarlo (se simula con un random booleano). Si es rechazado, el sistema espera <code>retry_seconds</code> segundos para reintentar el pedido. La cantidad de segundos para reintentar es configurable via variable de entorno <code>RETRY_SECONDS</code>. Por ultimo va a depender del tiempo que tarda en procesar el request que tambien es simulado simplemente con un sleep de tiempo random.</p>
-<p>El resultado final de la reserva entonces necesitará que ambos pedidos (hotel y aerolinea) se completen en el caso de ser paquete o unicamente el pedido a la aereolinea. Es decir que no se puede agregar las estadisticas ni finalizar el request hasta que ambos threads hayan finalizado, y eso se resuelve a partir de monitores, esta herramienta nos brinda la posibilidad de esperar hasta que se cumpla una condición, en este caso si se reserva un paquete se debe esperar que ambos pedidos sean completados y sino solamente el request a la aereolinea.</p>
-<p>Una vez que se completa el request a la aereolinea, se procede a agregar las estadísticas correspondientes, se suma el tiempo total que tardo en procesarse el pedido de principio a fin y se agrega la ruta solicitada(para agregar estas estadisticas, sera necesario obtener el lock para poder leer el estado actual de las estadisticas y agregar las nuevas).</p>
+<p>Una vez que ya tenemos todo el sistema inicializado, nuestro sistema ya está listo para recibir nuevos requisitos. Si todos los parámetros ingresados son correctos, se procede a realizar la reserva. Si no, se muestra un mensaje de error.</p>
+<p>La lógica de la aplicación se encuentra en el archivo <code>src/threads/alglobo.rs</code> . En primer lugar se abre un nuevo thread para poder ejecutar concurrentemente el request a la aerolínea por un lado y por el otro lado el request al hotel si él mismo lo requiere(en caso de que el pedido incluya el modo de paquete completo).</p>
+<p>En el caso de que la reserva sea por paquete, el pedido se envía al webservice del hotel y como sus reservas nunca se rechazan, el tiempo que tarda en procesar la respuesta simplemente se simula con un sleep de un tiempo random.</p>
+<p>De forma simultánea, se envía el pedido a la aerolínea correspondiente. El tiempo que demora en realizar el request va a depender de la cantidad de request que soporta la aerolínea concurrentemente, ya que si la misma está respondiendo la cantidad máxima de pedidos, el request de la aerolínea se va a bloquear y deberá esperar a que un pedido anterior termine. Esto está resuelto por el mismo semáforo que solo le va a permitir acceso a los pedidos si su contador interno es positivo, cada pedido que ingresa adquiere el semáforo decrementando en uno el contador, una vez que finaliza el pedido se incrementa el contador desbloqueando un hilo.
+Además la aerolínea puede aceptar el pedido o rechazarlo (se simula con un random booleano). Si es rechazado, el sistema espera <code>retry_seconds</code> segundos para reintentar el pedido. La cantidad de segundos para reintentar es configurable vía variable de entorno <code>RETRY_SECONDS</code>. Por último va a depender del tiempo que tarda en procesar el request que también es simulado simplemente con un sleep de tiempo random.</p>
+<p>El resultado final de la reserva entonces necesitará que ambos pedidos (hotel y aerolínea) se completen en el caso de ser paquete o únicamente el pedido a la aerolínea. Es decir que no se puede agregar las estadísticas ni finalizar el request hasta que ambos threads hayan finalizado, y eso se resuelve a partir de monitores, esta herramienta nos brinda la posibilidad de esperar hasta que se cumpla una condición, en este caso si se reserva un paquete se debe esperar que ambos pedidos sean completados y sino solamente el request a la aerolínea.</p>
+<p>Una vez que se completa el request a la aerolínea, se procede a agregar las estadísticas correspondientes, se suma el tiempo total que tardó en procesar el pedido de principio a fin y se agrega la ruta solicitada(para agregar estas estadísticas, será necesario obtener el lock para poder leer el estado actual de las estadísticas y agregar las nuevas).</p>
 <p><img src="../../../../img/threads.jpg" alt="Threads" /></p>
 <h1 id="parte-b" class="section-header"><a href="#parte-b">Parte B</a></h1>
-<p>La resolución de la primera parte del Trabajo Práctico se encuentra en la carpeta <code>src/atix</code> y se podrá ejecutar con <code>cargo run --bin atix</code>.</p>
+<p>La resolución de la primera parte del Trabajo Práctico se encuentra en la carpeta <code>src/actix</code> y se podrá ejecutar con <code>cargo run --bin actix</code>.</p>
 <h2 id="enunciado-1" class="section-header"><a href="#enunciado-1">Enunciado</a></h2>
 <p><em>Implementar la aplicación basada en el modelo de Actores, utilizando el framework Actix.</em></p>
 <h2 id="resolución-1" class="section-header"><a href="#resolución-1">Resolución</a></h2><h3 id="actores" class="section-header"><a href="#actores">Actores</a></h3><h4 id="statactor" class="section-header"><a href="#statactor">StatActor</a></h4>
-<p>El actor <code>StatActor</code> se encarga de manejar las estadísticas de la aplicación. La estructura del actor cuenta con la acumulacion de los tiempos que toman los request, un <code>HashMap</code> con las rutas solicitadas y un <code>HashMap</code> con los IDs de los request junto con un contador para saber si finalizo su procesamiento.</p>
+<p>El actor <code>StatActor</code> se encarga de manejar las estadísticas de la aplicación. La estructura del actor cuenta con la acumulacion de los tiempos que toman los request, un <code>HashMap</code> con las rutas solicitadas y un <code>HashMap</code> con los IDs de los request junto con un contador para saber si finalizó su procesamiento.</p>
 
 <div class="example-wrap"><pre class="rust rust-example-rendered">
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">StatsActor</span> {
@@ -71,19 +71,19 @@ Ademas la aerolínea puede aceptar el pedido o recharzarlo (se simula con un ran
 <span class="ident">destinations</span>: <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">String</span>, <span class="ident">i64</span><span class="op">&gt;</span>,
 <span class="ident">flights</span>: <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">i32</span>, <span class="ident">i32</span><span class="op">&gt;</span>,
 }</pre></div>
-<p>Este actor puede recibir un mensaje a la vez del tipo <code>Stat</code>. Al recibir este tipo de mensajes, si el request esta finalizado(es decir que si se trata de un paquete, finalizo tanto el pedido del hotel como el de la aereolinea), entonces se procede a sumar el tiempo de procesamiento al contador de tiempos totales y se agrega la ruta al <code>HashMap</code> de rutas frecuentes. Además imprimer por consola las estadisticas hasta el momento que incluyen la cantidad de vuelos, el tiempo total de procesamiento, el tiempo promedio de procesamiento y las 3 rutas más frecuentes.</p>
+<p>Este actor puede recibir un mensaje a la vez del tipo <code>Stat</code>. Al recibir este tipo de mensajes, si el request está finalizado(es decir que si se trata de un paquete, finalizó tanto el pedido del hotel como el de la aerolínea), entonces se procede a sumar el tiempo de procesamiento al contador de tiempos totales y se agrega la ruta al <code>HashMap</code> de rutas frecuentes. Además imprime por consola las estadísticas hasta el momento que incluyen la cantidad de vuelos, el tiempo total de procesamiento, el tiempo promedio de procesamiento y las 3 rutas más frecuentes.</p>
 <p>Por otro lado, puede recibir un mensaje del tipo <code>FinishMessage</code> que indica que ya no quedan requests por procesar, por lo que se procede a finalizar la aplicación.</p>
 <h4 id="airline" class="section-header"><a href="#airline">Airline</a></h4>
-<p>El actor <code>Airline</code> simula el webservice de la aereolinea. La estructura unicamente cuenta con la referencia al <code>StatActor</code> para poder enviarle los mensajes de estadisticas una vez que termina de procesar el request.</p>
-<p>A diferencia de <code>StatActor</code>, este actor se implementa con un <code>SyncContext</code> y esto se debe a que este actor se ejecuta en un <code>SyncArbitrer</code> que permite ejecutar <code>rate_limit</code> actores simultaneamente. Por lo que, por cada aereolinea, se tiene un <code>SyncArbitrer</code> que permite ejecutar N <code>Airline</code> simultaneamente acorde a su <code>rate_limit</code> establecido en el archivo <code>src/config/ariline.txt</code>.</p>
-<p>Este actor recibe unicamente mensajes del tipo <code>InfoFlight</code> y el actor va a simular el procesamiento del request, es decir, va a simular el tiempo que tarda en procesar el request. Este tiempo estare compuesto de la misma manera que esta explicado en la parte A del Trabajo Práctico, es decir que el tiempo va a depender de: cuantos request se pueden procesar simultaneamente, el tiempo que tarda en procesar un request(sleep con duración random) y como puede rechazar los pedidos, se esperaran <code>retry_seconds</code> segundos si se rechaza para reintentar el pedido, hasta que se acepte.</p>
-<p>Una vez que completa el request, realiza un <code>try_send</code> al <code>StatActor</code> para enviarle el mensaje de estadisticas correspondiente con el tiempo que tardo en procesar el pedido.</p>
+<p>El actor <code>Airline</code> simula el webservice de la aerolínea. La estructura únicamente cuenta con la referencia al <code>StatActor</code> para poder enviarle los mensajes de estadísticas una vez que termina de procesar el requisito.</p>
+<p>A diferencia de <code>StatActor</code>, este actor se implementa con un <code>SyncContext</code> y esto se debe a que este actor se ejecuta en un <code>SyncArbitrer</code> que permite ejecutar <code>rate_limit</code> actores simultáneamente. Por lo que, por cada aerolínea, se tiene un <code>SyncArbitrer</code> que permite ejecutar N <code>Airline</code> simultáneamente acorde a su <code>rate_limit</code> establecido en el archivo <code>src/config/airline.txt</code>.</p>
+<p>Este actor recibe únicamente mensajes del tipo <code>InfoFlight</code> y el actor va a simular el procesamiento del request, es decir, va a simular el tiempo que tarda en procesar el request. Este tiempo estará compuesto de la misma manera que esta explicado en la parte A del Trabajo Práctico, es decir que el tiempo va a depender de: cuantos request se pueden procesar simultáneamente, el tiempo que tarda en procesar un request(sleep con duración random) y como puede rechazar los pedidos, se esperarán <code>retry_seconds</code> segundos si se rechaza para reintentar el pedido, hasta que se acepte.</p>
+<p>Una vez que completa el request, realiza un <code>try_send</code> al <code>StatActor</code> para enviarle el mensaje de estadísticas correspondiente con el tiempo que tardo en procesar el pedido.</p>
 <h4 id="hotel" class="section-header"><a href="#hotel">Hotel</a></h4>
-<p>El actor <code>Hotel</code> simula el webservice del hotel. Al igual que la aereolinea, la estructura unicamente cuenta con la referencia al <code>StatActor</code> para poder enviarle los mensajes de estadisticas una vez que termina de procesar el request.</p>
-<p>El Hotel también es ejecutado en un <code>SyncArbitrer</code> que permite ejecutar todos los request en simultaneo.</p>
-<p>Este actor recibe mensajes del tipo <code>InfoFlight</code> y a los mismos responde simulando el procesamiento del request, es decir, va a simular el tiempo que tarda en procesar el request. Pasado el tiempo de procesamiento (sleep de duracion random), se enviara un mensaje al <code>StatActor</code> para avisarle que se completo el request y se le mandaran las estadisticas correspondientes con el tiempo que tardo en procesar el pedido.</p>
+<p>El actor <code>Hotel</code> simula el webservice del hotel. Al igual que la aerolínea, la estructura únicamente cuenta con la referencia al <code>StatActor</code> para poder enviarle los mensajes de estadísticas una vez que termina de procesar el request.</p>
+<p>El Hotel también es ejecutado en un <code>SyncArbitrer</code> que permite ejecutar todos los request en simultáneo.</p>
+<p>Este actor recibe mensajes del tipo <code>InfoFlight</code> y a los mismos responde simulando el procesamiento del request, es decir, va a simular el tiempo que tarda en procesar el request. Pasado el tiempo de procesamiento (sleep de duración random), se enviará un mensaje al <code>StatActor</code> para avisarle que se completó el request y se le mandaran las estadísticas correspondientes con el tiempo que tardo en procesar el pedido.</p>
 <h3 id="mensajes" class="section-header"><a href="#mensajes">Mensajes</a></h3><h4 id="infoflight" class="section-header"><a href="#infoflight">InfoFlight</a></h4>
-<p>Mensaje que se envía a los actores <code>Airline</code> y <code>Hotel</code> para indicar que se recibio un request de vuelo. Esta compuesto por la información del vuelo y el tiempo que comenzo a procesarse el request. La respuesta esperada para este tipo de mensajes es vacia.</p>
+<p>Mensaje que se envía a los actores <code>Airline</code> y <code>Hotel</code> para indicar que se recibe un request de vuelo. Está compuesto por la información del vuelo y el tiempo que comenzó a procesarse el request. La respuesta esperada para este tipo de mensajes es vacía.</p>
 
 <div class="example-wrap"><pre class="rust rust-example-rendered">
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">InfoFlight</span> {
@@ -91,7 +91,7 @@ Ademas la aerolínea puede aceptar el pedido o recharzarlo (se simula con un ran
 <span class="kw">pub</span> <span class="ident">start_time</span>: <span class="ident">std::time::Instant</span>,
 }</pre></div>
 <h4 id="stat" class="section-header"><a href="#stat">Stat</a></h4>
-<p>Mensaje que se envía al actor <code>StatsActor</code> para indicar que finalizo de procesarse el request de vuelo. Esta compuesto por el tiempo de procesamiento de un request y <code>FlightReservation</code> para conocer la informacion del vuelo. La respuesta esperada para este tipo de mensajes es vacia.</p>
+<p>Mensaje que se envía al actor <code>StatsActor</code> para indicar que finalizó de procesarse el request de vuelo. Está compuesto por el tiempo de procesamiento de un request y <code>FlightReservation</code> para conocer la informacion del vuelo. La respuesta esperada para este tipo de mensajes es vacía.</p>
 
 <div class="example-wrap"><pre class="rust rust-example-rendered">
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Stat</span> {
@@ -100,8 +100,8 @@ Ademas la aerolínea puede aceptar el pedido o recharzarlo (se simula con un ran
 }</pre></div>
 <h2 id="testing" class="section-header"><a href="#testing">Testing</a></h2>
 <ul>
-<li>Para la parte A, se realizan pruebas de volumen gracias a el uso de Atix web, en donde con mayor facilidad se logro enviar muchos pedidos en simultaneo para validar el funcionamiento del programa.</li>
-<li>Se realizan pruebas automatizadas en donde se realizan varias pruebas de una vez, para validar el funcionamiento del programa, implementando nuevamente aquellos métodos que no son deterministicos.</li>
+<li>Para la parte A, se realizan pruebas de volumen gracias a el uso de Actix web, en donde con mayor facilidad se logró enviar muchos pedidos en simultáneo para validar el funcionamiento del programa.</li>
+<li>Se realizan pruebas automatizadas en donde se realizan varias pruebas de una vez, para validar el funcionamiento del programa, implementando nuevamente aquellos métodos que no son determinísticos.</li>
 </ul>
 <h2 id="post-mortem" class="section-header"><a href="#post-mortem">Post Mortem</a></h2>
 <ul>
@@ -109,10 +109,10 @@ Ademas la aerolínea puede aceptar el pedido o recharzarlo (se simula con un ran
 <li>condvar por barrieres</li>
 <li>loom</li>
 <li>atixweb en actroes</li>
-<li>exxplicar porque no usamos stdout para el log (las stats te lo cagan)</li>
+<li>exxplicar por qué no usamos stdout para el log (las stats te lo cagan)</li>
 </ul>
 <p>Ideas de Todos:</p>
-<p>Hablar de correctitud, estado mutable compartido, por que no es fork join, barriers y semaforos</p>
+<p>Hablar de correctitud, estado mutable compartido, por que no es fork join, barriers y semáforos</p>
 <p>Una explicación del diseño y de las decisiones tomadas para la implementación de la solución.</p>
 <p>Detalle de resolución de la lista de tareas anterior.</p>
 <p>Diagrama que refleje los threads, el flujo de comunicación entre ellos y los datos que intercambian.</p>

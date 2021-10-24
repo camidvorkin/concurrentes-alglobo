@@ -9,9 +9,6 @@ use common::logger::LogLevel;
 use common::simulate_requests::simulate_hotel;
 use common::utils::get_retry_seconds;
 
-use std::thread;
-use std::time::Duration;
-
 pub struct Hotel {
     pub addr_statistics: Addr<StatsActor>,
 }
