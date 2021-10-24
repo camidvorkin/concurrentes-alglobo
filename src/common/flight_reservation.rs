@@ -19,8 +19,8 @@ impl fmt::Display for FlightReservation {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut string = format!("{}->{}", self.origin, self.destination);
         match self.hotel {
-            true => string += &format!("({}+)", self.airline),
-            false => string += &format!("({})", self.airline),
+            true => string += &format!(" ({}+)", self.airline),
+            false => string += &format!(" ({})", self.airline),
         }
         write!(f, "{}", string)
     }
