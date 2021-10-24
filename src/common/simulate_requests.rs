@@ -3,7 +3,7 @@ use std::{thread, time::Duration};
 
 pub const MIN_TIME: u64 = 500;
 pub const MAX_TIME: u64 = 1500;
-pub const RAND_HOTEL: f64 = 0.8;
+pub const RAND_SUCCESSFUL_REQUEST: f64 = 0.8;
 
 /// Simulated request to a hypothetical hotel web server
 pub fn simulate_hotel() {
@@ -18,7 +18,7 @@ pub fn simulate_airline() -> Result<(), &'static str> {
         thread_rng().gen_range(MIN_TIME, MAX_TIME),
     ));
 
-    match rand::thread_rng().gen_bool(RAND_HOTEL) {
+    match rand::thread_rng().gen_bool(RAND_SUCCESSFUL_REQUEST) {
         true => Ok(()),
         false => Err("Request to airline failed"),
     }

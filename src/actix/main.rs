@@ -39,27 +39,13 @@ pub async fn reserve(
         let addr_airline = match addr_airlines.get(&flight_reservation.airline) {
             None => {
                 logger::log(
-                    format!(
-                        "{} | BAD REQUEST | Airport not present",
-                        flight_reservation.to_string()
-                    ),
+                    format!("{} | BAD REQUEST | Airport not present", flight_reservation),
                     LogLevel::INFO,
                 );
                 continue;
             }
             Some(val) => {
-                let hotel = if flight_reservation.hotel { "" } else { "no" };
-                logger::log(
-                    format!(
-                        "{} | New Request! From {} to {} with {} airline with {} hotel",
-                        flight_reservation.to_string(),
-                        flight_reservation.origin,
-                        flight_reservation.destination,
-                        flight_reservation.airline,
-                        hotel
-                    ),
-                    LogLevel::INFO,
-                );
+                logger::log(format!("{} | START", flight_reservation,), LogLevel::INFO);
                 val
             }
         };

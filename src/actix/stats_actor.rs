@@ -122,9 +122,8 @@ impl Handler<Stat> for StatsActor {
             self.flights.remove(&msg.flight_reservation.id);
             logger::log(
                 format!(
-                    "{} | REQUEST COMPLETED        | The request was executed in {} millis. ",
-                    msg.flight_reservation.to_string(),
-                    msg.elapsed_time
+                    "{} | FINISH  | The flight was processed in {} millis. ",
+                    msg.flight_reservation, msg.elapsed_time
                 ),
                 LogLevel::INFO,
             );

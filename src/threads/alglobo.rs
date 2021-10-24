@@ -19,7 +19,7 @@ fn send_to_hotel(
 ) {
     logger_sender
         .send((
-            format!("{} | STARTING HOTEL REQUEST   | ", flight_info.to_string()),
+            format!("{} | HOTEL   | Request started", flight_info),
             LogLevel::INFO,
         ))
         .expect("Logger mpsc not receving messages");
@@ -27,10 +27,7 @@ fn send_to_hotel(
     simulate_hotel();
     logger_sender
         .send((
-            format!(
-                "{} | HOTEL REQUEST COMPLETED  | OK",
-                flight_info.to_string()
-            ),
+            format!("{} | HOTEL   | Request accepted", flight_info),
             LogLevel::INFO,
         ))
         .expect("Logger mpsc not receving messages");
@@ -53,7 +50,7 @@ fn send_to_airline(
 ) {
     logger_sender
         .send((
-            format!("{} | STARTING AIRLINE REQUEST | ", flight_info.to_string()),
+            format!("{} | AIRLINE | Request started", flight_info),
             LogLevel::INFO,
         ))
         .expect("Logger mpsc not receving messages");
@@ -63,7 +60,10 @@ fn send_to_airline(
     while simulate_airline().is_err() {
         logger_sender
             .send((
-                format!("{} | AIRLINE REQUEST REJECTED | Request was rejected by {}, retried in {} secs", flight_info.to_string(), flight_info.airline.clone(), retry_seconds),
+                format!(
+                    "{} | AIRLINE | Request rejected ; Retry in {} seconds",
+                    flight_info, retry_seconds
+                ),
                 LogLevel::INFO,
             ))
             .expect("Logger mpsc not receving messages");
@@ -72,11 +72,7 @@ fn send_to_airline(
     }
     logger_sender
         .send((
-            format!(
-                "{} | AIRLINE REQUEST ACCEPTED | Request accepted by {}",
-                flight_info.to_string(),
-                flight_info.airline
-            ),
+            format!("{} | AIRLINE | Request accepted", flight_info),
             LogLevel::INFO,
         ))
         .expect("Logger mpsc not receving messages");
@@ -145,8 +141,8 @@ pub fn reserve(
     logger_sender
         .send((
             format!(
-                "{} | REQUEST COMPLETED        | The request was executed in {} millis. ",
-                flight_reservation.to_string(),
+                "{} | FINISH  | The flight was processed in {} millis. ",
+                flight_reservation,
                 start_time.elapsed().as_millis()
             ),
             LogLevel::INFO,

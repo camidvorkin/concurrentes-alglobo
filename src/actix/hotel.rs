@@ -22,9 +22,14 @@ impl Handler<InfoFlight> for Hotel {
     /// Handle the message of InfoFlight and simulates to send it to the Hotel server if the request includes the whole package experience.
     /// The server is always available so the request is always successful.
     fn handle(&mut self, msg: InfoFlight, _ctx: &mut Self::Context) -> Self::Result {
+        logger::log(
+            format!("{} | HOTEL   | Request started", msg.flight_reservation),
+            LogLevel::INFO,
+        );
+
         simulate_hotel();
         logger::log(
-            format!("{} | HOTEL REQUEST   | OK", msg.flight_reservation),
+            format!("{} | HOTEL   | Request accepted", msg.flight_reservation),
             LogLevel::INFO,
         );
 

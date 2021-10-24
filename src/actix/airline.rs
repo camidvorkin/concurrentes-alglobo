@@ -30,28 +30,24 @@ impl Handler<InfoFlight> for Airline {
     /// the message is sent to the StatsActor for statistics purpuses.
     fn handle(&mut self, msg: InfoFlight, _ctx: &mut Self::Context) -> Self::Result {
         logger::log(
-            format!(
-                "{} | STARTING AIRLINE REQUEST | ",
-                msg.flight_reservation.to_string()
-            ),
+            format!("{} | AIRLINE | Request started", msg.flight_reservation),
             LogLevel::INFO,
         );
         let retry_seconds = get_retry_seconds();
 
         while simulate_airline().is_err() {
             logger::log(
-                format!("{} | AIRLINE REQUEST REJECTED | Request was rejected by {}, retried in {} secs", msg.flight_reservation.to_string(), msg.flight_reservation.airline.clone(), retry_seconds),
+                format!(
+                    "{} | AIRLINE | Request rejected ; Retry in {} seconds",
+                    msg.flight_reservation, retry_seconds
+                ),
                 LogLevel::INFO,
             );
             thread::sleep(Duration::from_secs(retry_seconds));
         }
 
         logger::log(
-            format!(
-                "{} | AIRLINE REQUEST ACCEPTED | Request accepted by {}",
-                msg.flight_reservation.to_string(),
-                msg.flight_reservation.airline
-            ),
+            format!("{} | AIRLINE | Request accepted", msg.flight_reservation,),
             LogLevel::INFO,
         );
 
