@@ -11,6 +11,9 @@ date: |
   | [71.59] Técnicas de Programación Concurrente I
   |
   | 26 de octubre de 2021
+colorlinks: true
+linkcolor: purple
+urlcolor: purple
 papersize: a4
 geometry: margin=2.5cm
 header-includes: |

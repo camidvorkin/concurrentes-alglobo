@@ -1,24 +1,38 @@
 //! Informe
 //! ---
-//! [Leer en PDF](http://...)
+//! Este informe puede ser leido tanto en [PDF](https://camidvorkin.github.io/concurrentes-alglobo/informe.pdf) (gracias a Pandoc) como en [HTML](https://camidvorkin.github.io/concurrentes-alglobo/doc/informe/index.html) (gracias a rustdoc)
 //!
-//! [Leer en HTML](http://...)
+//! Para documentación especifica del código fuente, que excede a este informe, se puede consultar la [documentación de la aplicación](file:///home/delmazo/Desktop/concurrentes-alglobo/docs/doc/actix/index.html).
 //!
-//! # Parte A
-//! La resolución de la primera parte del Trabajo Práctico se encuentra en la carpeta `src/threads` y se podrá ejecutar con `cargo run --bin threads`.
+//! ## Trabajo Práctico
 //!
-//! ## Enunciado
+//! Este trabajo práctico se forma por dos distintas implementaciones de un sistema de reservas de vuelos a procesar de manera concurrente:
+//!
+//! - La primera parte consiste de un servidor HTTP que responde reservas de vuelos, y para cada una levanta distintos hilos.
+//!   - El motor del servidor es [actix-web](https://actix.rs/)
+//!   - Su código fuente se puede encontrar en `src/threads` [(documentación)](https://camidvorkin.github.io/concurrentes-alglobo/doc/threads/index.html)
+//!   - El servidor se puede levantar con `cargo run --bin threads` y un ejemplo de un pedido de reserva es `curl -i -d '{"origin":"EZE", "destination":"JFK", "airline":"AA", "hotel":true}' -H "Content-Type: application/json" -X POST http://localhost:8080/`
+//!   - Esta implementación tiene pruebas que pueden ser ejecutadas con `cargo test --bin threads` y una prueba de carga para el servidor se puede ejecutar con `./apache-ab-stresstest.sh` que utiliza la herramienta [Apache ab](http://httpd.apache.org/docs/current/programs/ab.html)
+//!
+//! - La segunda parte consiste en leer un archivo CSV con las distintas reservas de vuelo, y para estas ejecutar un sistema de actores que irán procesandolos.
+//!   - El framework de actores utilizados es [actix](https://github.com/actix/actix)
+//!   - Su código fuente se puede encontrar en `src/actix` [(documentación)](https://camidvorkin.github.io/concurrentes-alglobo/doc/actix/index.html)
+//!   - El programa se puede ejecutar con `cargo run --bin actix`
+//!   - Esta implementación tiene pruebas que pueden ser ejecutadas con `cargo test --bin actix`
+//!
+//! - Dentro de `src/common` se encuentran las funciones comunes a ambas implementaciones.
+//!
+//! ## Primera implementación -- Hilos
 //! *Implementar la aplicación utilizando las herramientas de concurrencia de la biblioteca standard de Rust vistas en clase: Mutex, RwLock, Semáforos (del crate std-semaphore), Channels, Barriers y Condvars.*
-//!
-//! ## Resolución
 //!
 //! ### Estructuras
 //!
 //! #### Flight Reservation
+//!
 //! En primer lugar, se crea una estructura que representa una reserva de vuelo. A cada vuelo ingresado por consola, se le asignará un ID para ayudarnos a identificarlo.
 //! Además, la estructura cuenta con la información necesaria para que el vuelo se pueda reservar con las configuraciones pedidas. Se almacenará su origen y destino, la aerolínea correspondiente a la que se le realizará el requisito y si el pedido incluye o no la reserva de hotel.
 //!
-//! ```
+//! ```rust
 //! pub struct FlightReservation {
 //!    pub id: i32,
 //!    pub origin: String,
@@ -29,8 +43,9 @@
 //!```
 //!
 //! #### Statistics
+//!
 //! Estructura que contiene las estadísticas de la aplicación. Por un lado, contamos con un acumulador de tiempo para poder estimar el tiempo promedio que toma una reserva desde que ingresa el pedido hasta que es finalmente aceptada. Por otro lado, un `HashMap` en donde se irán guardando todas las rutas (origen - destino) realizadas para poder llevar una estadística de las rutas más frecuentes.
-//! ```
+//! ```rust
 //! pub struct Statistics {
 //!    sum_time: Arc<RwLock<i64>>,
 //!    destinations: Arc<RwLock<HashMap<String, i64>>>,
@@ -40,6 +55,7 @@
 //! Como se puede ver en la estructura, ambas estructuras son `Arc` para que se puedan usar en varios threads. Además, se usa `RwLock` para proveer seguridad a la hora de leer y escribir en las mismas. Esto se debe a que todos los pedidos que ingresan al sistema van a estar intentando acceder a los recursos de estadísticas, es por eso que es necesario el uso de un mecanismo de sincronismo para que no haya conflictos. `RwLock` nos va a permitir tener un escritor (lock exclusivo) o varios lectores a la vez(lock compartido).
 //!
 //! #### AppState
+//!
 //! Esta última estructura se trata del estado compartido que se compartirá en cada thread que escuche nuevas solicitudes.
 //! La estructura contiene:
 //! - Las aerolíneas del tipo `Airlines`, que se trata de un mapa de todas las Aerolíneas con webservice disponibles en nuestro sistema. `Airlines` es un `HashMap` de tipo `<String, Arc<Semaphore>>`, en donde la clave es el nombre de la aerolínea. Y el valor es lo que simula ser el webservice, en este caso, un `Semaphore` que nos permitirá controlar la cantidad de solicitudes que se pueden realizar a cada webservice, teniendo en cuenta que cada aerolínea cuenta con un `rate limit`.
@@ -47,7 +63,7 @@
 //! - La estructura de estadísticas `Statistics` para poder acceder y agregar estadísticas a la aplicación.
 //! - El `logger sender` para poder enviar mensajes al canal de logs desde cada thread. Para lograr este pasaje de mensajes al canal de logs, se usa un `Sensor` que permite enviar mensajes al otro lado del canal (múltiples consumidores y un solo productor).
 //!
-//! ```
+//! ```rust
 //! struct AppState {
 //!     airlines: Airlines,
 //!     statistics: Statistics,
@@ -82,10 +98,8 @@
 //!
 //! ![Threads](../../../img/threads.jpg)
 //!
-//! # Parte B
-//! La resolución de la primera parte del Trabajo Práctico se encuentra en la carpeta `src/actix` y se podrá ejecutar con `cargo run --bin actix`.
+//! ## Segunda implementación -- Actores
 //!
-//! ## Enunciado
 //! *Implementar la aplicación basada en el modelo de Actores, utilizando el framework Actix.*
 //!
 //! ## Resolución
@@ -96,11 +110,11 @@
 //!
 //! El actor `StatActor` se encarga de manejar las estadísticas de la aplicación. La estructura del actor cuenta con la acumulacion de los tiempos que toman los request, un `HashMap` con las rutas solicitadas y un `HashMap` con los IDs de los request junto con un contador para saber si finalizó su procesamiento.
 //!
-//! ```
+//! ```rust
 //! pub struct StatsActor {
-//! sum_time: i64,
-//! destinations: HashMap<String, i64>,
-//! flights: HashMap<i32, i32>,
+//!   sum_time: i64,
+//!   destinations: HashMap<String, i64>,
+//!   flights: HashMap<i32, i32>,
 //! }
 //! ```
 //!
@@ -132,10 +146,10 @@
 //!
 //! Mensaje que se envía a los actores `Airline` y `Hotel` para indicar que se recibe un request de vuelo. Está compuesto por la información del vuelo y el tiempo que comenzó a procesarse el request. La respuesta esperada para este tipo de mensajes es vacía.
 //!
-//! ```
+//! ```rust
 //! pub struct InfoFlight {
-//! pub flight_reservation: FlightReservation,
-//! pub start_time: std::time::Instant,
+//!   pub flight_reservation: FlightReservation,
+//!   pub start_time: std::time::Instant,
 //! }
 //! ```
 //!
@@ -168,6 +182,7 @@
 //!
 //! Hablar de correctitud, estado mutable compartido, por que no es fork join, barriers y semáforos
 //!
+//! Clavar fotos y docuemntacion de actix web para hablar de los N workers que levanta para escuchar los gets
 //!
 //! Una explicación del diseño y de las decisiones tomadas para la implementación de la solución.
 //!
@@ -180,4 +195,4 @@
 //!
 //! Diagramas de entidades realizados (structs y demás).
 
-pub fn main() {}
+fn main() {}
