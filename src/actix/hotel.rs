@@ -7,7 +7,6 @@ use actix::{Actor, Addr, Handler, SyncContext};
 use common::logger;
 use common::logger::LogLevel;
 use common::simulate_requests::simulate_hotel;
-use common::utils::get_retry_seconds;
 
 pub struct Hotel {
     pub addr_statistics: Addr<StatsActor>,

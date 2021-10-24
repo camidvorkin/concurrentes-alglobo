@@ -6,23 +6,27 @@ use common::simulate_requests::{simulate_airline, simulate_hotel};
 use common::utils::get_retry_seconds;
 
 use std::sync::mpsc::Sender;
-use std::sync::{Arc, Barrier};
+use std::sync::{Arc, Condvar, Mutex};
 use std::thread;
 use std::time::Duration;
 use std_semaphore::Semaphore;
-use rand::{thread_rng, Rng};
 
 /// Function that makes the request to the hotel
 fn send_to_hotel(
-    flight: FlightReservation,
-    barrier: Arc<Barrier>,
+    flight_info: FlightReservation,
+    pair: Arc<(Mutex<i16>, Condvar)>,
     logger_sender: Sender<LoggerMsg>,
 ) {
     simulate_hotel();
     logger_sender
-        .send((format!("{} | HOTEL REQUEST   | OK", flight), LogLevel::INFO))
+        .send((format!("{} | HOTEL REQUEST   | OK", flight_info.to_string()), LogLevel::INFO))
         .expect("Logger mpsc not receving messages");
-    barrier.wait();
+
+    let (lock, cvar) = &*pair;
+    cvar.notify_all();
+    let mut pending = lock.lock().unwrap();
+    *pending += 1;
+    cvar.notify_all();
 }
 
 /// Function that makes the request to the airline
@@ -31,7 +35,7 @@ fn send_to_hotel(
 fn send_to_airline(
     flight: FlightReservation,
     sem: Arc<Semaphore>,
-    barrier: Arc<Barrier>,
+    pair: Arc<(Mutex<i16>, Condvar)>,
     logger_sender: Sender<LoggerMsg>,
 ) {
     let retry_seconds = get_retry_seconds();
@@ -51,7 +55,12 @@ fn send_to_airline(
         .expect("Logger mpsc not receving messages");
 
     sem.release();
-    barrier.wait();
+    
+    let (lock, cvar) = &*pair;
+    cvar.notify_all();
+    let mut pending = lock.lock().unwrap();
+    *pending += 1;
+    cvar.notify_all();
 }
 
 /// We make a reservation by sending the request to the airline webserver and, if we are dealing with packages, to the hotel server
@@ -69,9 +78,10 @@ pub fn reserve(
     let flight_airline = flight_reservation.clone();
     let flight_path = flight_reservation.get_route();
 
-    let barrier = Arc::new(Barrier::new(if flight_reservation.hotel { 3 } else { 2 }));
-    let barrier_hotel = barrier.clone();
-    let barrier_airline = barrier.clone();
+    let complete_request = Arc::new((Mutex::new(0), Condvar::new()));
+    let completed_with = if flight_reservation.hotel {2} else {1};
+    let complete_request_hotel = complete_request.clone();
+    let complete_request_airline = complete_request.clone();
 
     let logger_sender_hotel = logger_sender.clone();
     let logger_sender_airline = logger_sender.clone();
@@ -82,7 +92,7 @@ pub fn reserve(
     if flight_reservation.hotel {
         thread::Builder::new()
             .name("hotel".to_string())
-            .spawn(move || send_to_hotel(flight_hotel, barrier_hotel, logger_sender_hotel))
+            .spawn(move || send_to_hotel(flight_hotel, complete_request_hotel, logger_sender_hotel))
             .expect("thread creation failed");
     }
 
@@ -92,16 +102,21 @@ pub fn reserve(
             send_to_airline(
                 flight_airline,
                 rate_limit,
-                barrier_airline,
+                complete_request_airline,
                 logger_sender_airline,
             )
         })
         .expect("thread creation failed");
 
-    barrier.wait();
+    let (lock, cvar) = &*complete_request;
+    
+    let mut completed = lock.lock().unwrap();
+    while *completed != completed_with {
+        completed = cvar.wait(completed).unwrap();
+    }
 
+    statistics.add_flight_reservation(start_time, flight_path.clone());
     logger_sender
-        .send((format!("{} | FINISH", flight_reservation), LogLevel::INFO))
+        .send((format!("{} | FINISH", flight_reservation.to_string()), LogLevel::INFO))
         .expect("Logger mpsc not receving messages");
-    statistics.add_flight_reservation(start_time, flight_path);
 }

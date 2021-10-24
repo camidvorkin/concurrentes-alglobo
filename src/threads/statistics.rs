@@ -26,7 +26,7 @@ impl Statistics {
     }
 
     /// Adds request time to the accumulated sum, and the flights origin->destination to the hashmap
-    pub fn add_flight_reservation(&mut self, start_time: std::time::Instant, destination: String) {
+    pub fn add_flight_reservation(&mut self, start_time: std::time::Instant, destination: String) -> i64 {
         {
             let diff = start_time.elapsed().as_millis() as i64;
             let mut sum_time = self.sum_time.write().expect("Failed to read from RwLock");
@@ -34,6 +34,7 @@ impl Statistics {
 
             let mut map = self.destinations.write().expect("RwLock poisoned");
             *map.entry(destination).or_insert(0) += 1;
+            diff
         }
     }
 
