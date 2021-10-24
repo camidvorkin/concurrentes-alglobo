@@ -26,15 +26,7 @@ impl Handler<InfoFlight> for Hotel {
     /// Handle the message of InfoFlight and simulates to send it to the Hotel server if the request includes the whole package experience.
     /// The server is always available so the request is always successful.
     fn handle(&mut self, msg: InfoFlight, _ctx: &mut Self::Context) -> Self::Result {
-        let retry_seconds = get_retry_seconds();
-
-        while simulate_hotel().is_err() {
-            logger::log(
-                format!("{} | HOTEL REQUEST   | RETRY", msg.flight_reservation),
-                LogLevel::INFO,
-            );
-            thread::sleep(Duration::from_secs(retry_seconds));
-        }
+        simulate_hotel();
         logger::log(
             format!("{} | HOTEL REQUEST   | OK", msg.flight_reservation),
             LogLevel::INFO,

@@ -1,0 +1,1 @@
+initSidebarItems({"fn":[["simulate_airline","Simulated request to an hypothetical airline web server"],["simulate_hotel","Simulated request to an hypothetical hotel web server"]]});
