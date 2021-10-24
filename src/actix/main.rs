@@ -20,8 +20,8 @@ use std::env;
 type AirlineReq = Request<Airline, InfoFlight>;
 type HotelReq = Request<Hotel, InfoFlight>;
 
-#[cfg(test)]
-mod test;
+// #[cfg(test)]
+// mod test;
 
 pub async fn reserve(
     flights: Vec<FlightReservation>,
