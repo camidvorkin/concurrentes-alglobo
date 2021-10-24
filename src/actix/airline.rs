@@ -29,18 +29,29 @@ impl Handler<InfoFlight> for Airline {
     /// If the server is not available, the message is sent again after a random time. If the server is available,
     /// the message is sent to the StatsActor for statistics purpuses.
     fn handle(&mut self, msg: InfoFlight, _ctx: &mut Self::Context) -> Self::Result {
+        logger::log(
+            format!(
+                "{} | STARTING AIRLINE REQUEST | ",
+                msg.flight_reservation.to_string()
+            ),
+            LogLevel::INFO,
+        );
         let retry_seconds = get_retry_seconds();
 
         while simulate_airline().is_err() {
             logger::log(
-                format!("{} | AIRLINE REQUEST   | RETRY", msg.flight_reservation),
+                format!("{} | AIRLINE REQUEST REJECTED | Request was rejected by {}, retried in {} secs", msg.flight_reservation.to_string(), msg.flight_reservation.airline.clone(), retry_seconds),
                 LogLevel::INFO,
             );
             thread::sleep(Duration::from_secs(retry_seconds));
         }
 
         logger::log(
-            format!("{} | AIRLINE REQUEST   | OK", msg.flight_reservation),
+            format!(
+                "{} | AIRLINE REQUEST ACCEPTED | Request accepted by {}",
+                msg.flight_reservation.to_string(),
+                msg.flight_reservation.airline
+            ),
             LogLevel::INFO,
         );
 

@@ -163,9 +163,20 @@ fn reservation(req: web::Json<FlightReservation>, appstate: web::Data<AppState>)
             HttpResponse::NotAcceptable().body("Airline not present on server configuration")
         }
         Some(semaphore) => {
+            let hotel = if flight.hotel { "" } else { "no" };
             appstate
                 .logger_sender
-                .send((format!("{} | START", flight.to_string()), LogLevel::INFO))
+                .send((
+                    format!(
+                        "{} | New Request! From {} to {} with {} airline with {} hotel",
+                        flight.to_string(),
+                        flight.origin,
+                        flight.destination,
+                        flight.airline,
+                        hotel
+                    ),
+                    LogLevel::INFO,
+                ))
                 .expect("Logger mpsc not receving messages");
 
             alglobo::reserve(

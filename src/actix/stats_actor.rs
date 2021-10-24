@@ -13,6 +13,16 @@ pub struct StatsActor {
     flights: HashMap<i32, i32>,
 }
 
+impl Default for StatsActor {
+    fn default() -> Self {
+        Self {
+            sum_time: 0,
+            destinations: HashMap::new(),
+            flights: HashMap::new(),
+        }
+    }
+}
+
 impl Actor for StatsActor {
     type Context = Context<Self>;
 }
@@ -92,9 +102,11 @@ pub struct Stat {
     pub flight_reservation: FlightReservation,
 }
 
-#[derive(Message)]
-#[rtype(result = "()")]
 pub struct FinishMessage;
+
+impl Message for FinishMessage {
+    type Result = Result<(i64, i64, f64), ()>;
+}
 
 impl Handler<Stat> for StatsActor {
     type Result = ();
@@ -122,7 +134,13 @@ impl Handler<Stat> for StatsActor {
 }
 
 impl Handler<FinishMessage> for StatsActor {
-    type Result = ();
+    type Result = Result<(i64, i64, f64), ()>;
 
-    fn handle(&mut self, _msg: FinishMessage, _ctx: &mut Self::Context) -> Self::Result {}
+    fn handle(&mut self, _msg: FinishMessage, _ctx: &mut Self::Context) -> Self::Result {
+        Ok((
+            self.get_total_count(),
+            self.get_sum_time(),
+            self.get_avg_time(),
+        ))
+    }
 }

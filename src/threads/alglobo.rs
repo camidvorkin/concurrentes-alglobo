@@ -17,10 +17,20 @@ fn send_to_hotel(
     pair: Arc<(Mutex<i16>, Condvar)>,
     logger_sender: Sender<LoggerMsg>,
 ) {
+    logger_sender
+        .send((
+            format!("{} | STARTING HOTEL REQUEST   | ", flight_info.to_string()),
+            LogLevel::INFO,
+        ))
+        .expect("Logger mpsc not receving messages");
+
     simulate_hotel();
     logger_sender
         .send((
-            format!("{} | HOTEL REQUEST   | OK", flight_info.to_string()),
+            format!(
+                "{} | HOTEL REQUEST COMPLETED  | OK",
+                flight_info.to_string()
+            ),
             LogLevel::INFO,
         ))
         .expect("Logger mpsc not receving messages");
@@ -36,17 +46,24 @@ fn send_to_hotel(
 ///
 /// If the request was declined by the airline, we retry it in N seconds (either a default value, or the ENVVAR `RETRY_SECONDS`)
 fn send_to_airline(
-    flight: FlightReservation,
+    flight_info: FlightReservation,
     sem: Arc<Semaphore>,
     pair: Arc<(Mutex<i16>, Condvar)>,
     logger_sender: Sender<LoggerMsg>,
 ) {
+    logger_sender
+        .send((
+            format!("{} | STARTING AIRLINE REQUEST | ", flight_info.to_string()),
+            LogLevel::INFO,
+        ))
+        .expect("Logger mpsc not receving messages");
+
     let retry_seconds = get_retry_seconds();
 
     while simulate_airline().is_err() {
         logger_sender
             .send((
-                format!("{} | AIRLINE REQUEST | RETRY", flight),
+                format!("{} | AIRLINE REQUEST REJECTED | Request was rejected by {}, retried in {} secs", flight_info.to_string(), flight_info.airline.clone(), retry_seconds),
                 LogLevel::INFO,
             ))
             .expect("Logger mpsc not receving messages");
@@ -54,7 +71,14 @@ fn send_to_airline(
         thread::sleep(Duration::from_secs(retry_seconds));
     }
     logger_sender
-        .send((format!("{} | AIRLINE REQUEST | OK", flight), LogLevel::INFO))
+        .send((
+            format!(
+                "{} | AIRLINE REQUEST ACCEPTED | Request accepted by {}",
+                flight_info.to_string(),
+                flight_info.airline
+            ),
+            LogLevel::INFO,
+        ))
         .expect("Logger mpsc not receving messages");
 
     sem.release();
@@ -117,11 +141,14 @@ pub fn reserve(
     while *completed != completed_with {
         completed = cvar.wait(completed).expect("Error on wait condvar");
     }
-
     statistics.add_flight_reservation(start_time, flight_path);
     logger_sender
         .send((
-            format!("{} | FINISH", flight_reservation.to_string()),
+            format!(
+                "{} | REQUEST COMPLETED        | The request was executed in {} millis. ",
+                flight_reservation.to_string(),
+                start_time.elapsed().as_millis()
+            ),
             LogLevel::INFO,
         ))
         .expect("Logger mpsc not receving messages");

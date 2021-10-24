@@ -9,11 +9,71 @@ use airline::Airline;
 use common::logger::{self, LogLevel};
 
 use common::{flight_reservation, AIRLINES_FILE, TEST_FLIGHTS_FILE};
+use flight_reservation::FlightReservation;
 use hotel::Hotel;
 use info_flight::InfoFlight;
 use stats_actor::{FinishMessage, StatsActor};
-
+use std::collections::HashMap;
 use std::env;
+
+// Vector of futures to wait for the end of the process
+type AirlineReq = Request<Airline, InfoFlight>;
+type HotelReq = Request<Hotel, InfoFlight>;
+
+#[cfg(test)]
+mod test;
+
+pub async fn reserve(
+    flights: Vec<FlightReservation>,
+    addr_airlines: HashMap<String, Addr<Airline>>,
+    addr_hotel: Addr<Hotel>,
+) -> Vec<(AirlineReq, Option<HotelReq>)> {
+    let mut responses: Vec<(AirlineReq, Option<HotelReq>)> = Vec::new();
+
+    for flight_reservation in flights {
+        let start_time = std::time::Instant::now();
+        let info_flight = InfoFlight {
+            flight_reservation: flight_reservation.clone(),
+            start_time,
+        };
+        let addr_airline = match addr_airlines.get(&flight_reservation.airline) {
+            None => {
+                logger::log(
+                    format!(
+                        "{} | BAD REQUEST | Airport not present",
+                        flight_reservation.to_string()
+                    ),
+                    LogLevel::INFO,
+                );
+                continue;
+            }
+            Some(val) => {
+                let hotel = if flight_reservation.hotel { "" } else { "no" };
+                logger::log(
+                    format!(
+                        "{} | New Request! From {} to {} with {} airline with {} hotel",
+                        flight_reservation.to_string(),
+                        flight_reservation.origin,
+                        flight_reservation.destination,
+                        flight_reservation.airline,
+                        hotel
+                    ),
+                    LogLevel::INFO,
+                );
+                val
+            }
+        };
+
+        let flight_res = addr_airline.send(info_flight.clone());
+        let hotel_res = match flight_reservation.hotel {
+            true => Some(addr_hotel.send(info_flight)),
+            false => None,
+        };
+
+        responses.push((flight_res, hotel_res));
+    }
+    responses
+}
 
 #[actix_rt::main]
 async fn main() {
@@ -43,47 +103,8 @@ async fn main() {
         format!("Hotel SyncArbier with {} count created", hotel_count),
         LogLevel::TRACE,
     );
-
-    // Vector of futures to wait for the end of the process
-    type AirlineReq = Request<Airline, InfoFlight>;
-    type HotelReq = Request<Hotel, InfoFlight>;
-    let mut responses: Vec<(AirlineReq, Option<HotelReq>)> = Vec::new();
-
-    for flight_reservation in flights {
-        let start_time = std::time::Instant::now();
-        let info_flight = InfoFlight {
-            flight_reservation: flight_reservation.clone(),
-            start_time,
-        };
-
-        let addr_airline = match addr_airlines.get(&flight_reservation.airline) {
-            None => {
-                logger::log(
-                    format!(
-                        "{} | BAD REQUEST | Airport not present",
-                        flight_reservation.to_string()
-                    ),
-                    LogLevel::INFO,
-                );
-                continue;
-            }
-            Some(val) => {
-                logger::log(
-                    format!("{} | START", flight_reservation.to_string()),
-                    LogLevel::INFO,
-                );
-                val
-            }
-        };
-
-        let flight_res = addr_airline.send(info_flight.clone());
-        let hotel_res = match flight_reservation.hotel {
-            true => Some(addr_hotel.send(info_flight)),
-            false => None,
-        };
-
-        responses.push((flight_res, hotel_res));
-    }
+    let responses: Vec<(AirlineReq, Option<HotelReq>)> =
+        reserve(flights, addr_airlines, addr_hotel).await;
 
     for (flight, hotel) in responses {
         let _flight = flight.await;
