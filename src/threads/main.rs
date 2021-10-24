@@ -126,7 +126,7 @@ async fn main() {
 
     // This is an infinite loop that only exits on a QUIT command
     // Anything after this line is part of the graceful shutdown
-    keyboard_loop(statistics, logger_sender.clone());
+    keyboard_loop(statistics, &logger_sender);
 
     logger_sender
         .send(("Shut down server".to_string(), LogLevel::FINISH))
