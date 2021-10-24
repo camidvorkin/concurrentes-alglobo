@@ -1,9 +1,8 @@
 use actix::Message;
 use common::flight_reservation::FlightReservation;
 
-/// Message made to a Actor Airline to start the request of flight reservation to the server.
+/// Message made to a Actor Airline or Hotel to start the request of flight reservation to the server.
 /// The message contains the address of the StatsActor for statistics purpuses and the information of the flight reservation.
-
 #[derive(Message)]
 #[rtype(result = "()")]
 pub struct InfoFlight {
