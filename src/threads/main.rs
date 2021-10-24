@@ -67,12 +67,12 @@ async fn main() {
         .name("logger".to_string())
         .spawn(move || {
             logger::init();
-            loop {
-                let (msg, loglevel) = logger_receiver
-                    .recv()
-                    .expect("Logger mpsc couldn't receive message");
 
+            while let Ok((msg, loglevel)) = logger_receiver.recv() {
                 logger::log(msg, loglevel);
+                if let LogLevel::FINISH = loglevel {
+                    break;
+                }
             }
         })
         .expect("thread creation failed");
@@ -85,6 +85,8 @@ async fn main() {
     let statistics = Statistics::new();
     let statistics_webserver = statistics.clone();
 
+    // This thread gets terminated when calling server.stop()
+    // https://docs.rs/actix-web/0.3.3/actix_web/server/struct.StopServer.html
     let _server_thread = thread::Builder::new()
         .name("http-server".to_string())
         .spawn(move || {
@@ -103,6 +105,7 @@ async fn main() {
                     })
                     .service(reservation)
             })
+            .shutdown_timeout(5)
             .bind(("127.0.0.1", 8080))
             .expect("Server couldn't start")
             .run();
@@ -115,11 +118,23 @@ async fn main() {
     logger_sender
         .send(("Keyboard started listening".to_string(), LogLevel::TRACE))
         .expect("Logger mpsc not receving messages");
-    keyboard_loop(statistics, logger_sender);
-    let srv = server_receiver.recv().unwrap();
+
+    // Reference to the server, so that we can then shut it down
+    let srv = server_receiver
+        .recv()
+        .expect("Couldn't receive server ref through mpsc");
+
+    // This is an infinite loop that only exits on a QUIT command
+    // Anything after this line is part of the graceful shutdown
+    keyboard_loop(statistics, logger_sender.clone());
+
+    logger_sender
+        .send(("Shut down server".to_string(), LogLevel::FINISH))
+        .expect("Logger mpsc not receving messages");
+
+    // We stop the server, which joins the server thread (and therefore drops any lingering mpsc ref we have)
+    // This is a graceful shutdown, so any request still in place will be completed before shutdown
     srv.stop(true).await;
-    // logger_thread.join();
-    // server_thread.join();
 }
 
 /// This documentation isn't showing anywhere on rustdoc :(
