@@ -24,6 +24,11 @@ name = "common"
 path = "src/common/main.rs"
 
 [[bin]]
+name = "informe"
+path = "src/informe.rs"
+
+
+[[bin]]
 name = "threads"
 path = "src/threads/main.rs"
 
