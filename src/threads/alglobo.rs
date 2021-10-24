@@ -19,12 +19,15 @@ fn send_to_hotel(
 ) {
     simulate_hotel();
     logger_sender
-        .send((format!("{} | HOTEL REQUEST   | OK", flight_info.to_string()), LogLevel::INFO))
+        .send((
+            format!("{} | HOTEL REQUEST   | OK", flight_info.to_string()),
+            LogLevel::INFO,
+        ))
         .expect("Logger mpsc not receving messages");
 
     let (lock, cvar) = &*pair;
     cvar.notify_all();
-    let mut pending = lock.lock().unwrap();
+    let mut pending = lock.lock().expect("Unable to lock");
     *pending += 1;
     cvar.notify_all();
 }
@@ -55,10 +58,10 @@ fn send_to_airline(
         .expect("Logger mpsc not receving messages");
 
     sem.release();
-    
+
     let (lock, cvar) = &*pair;
     cvar.notify_all();
-    let mut pending = lock.lock().unwrap();
+    let mut pending = lock.lock().expect("Unable to lock");
     *pending += 1;
     cvar.notify_all();
 }
@@ -79,7 +82,7 @@ pub fn reserve(
     let flight_path = flight_reservation.get_route();
 
     let complete_request = Arc::new((Mutex::new(0), Condvar::new()));
-    let completed_with = if flight_reservation.hotel {2} else {1};
+    let completed_with = if flight_reservation.hotel { 2 } else { 1 };
     let complete_request_hotel = complete_request.clone();
     let complete_request_airline = complete_request.clone();
 
@@ -109,14 +112,17 @@ pub fn reserve(
         .expect("thread creation failed");
 
     let (lock, cvar) = &*complete_request;
-    
-    let mut completed = lock.lock().unwrap();
+
+    let mut completed = lock.lock().expect("Unable to lock");
     while *completed != completed_with {
-        completed = cvar.wait(completed).unwrap();
+        completed = cvar.wait(completed).expect("Error on wait condvar");
     }
 
-    statistics.add_flight_reservation(start_time, flight_path.clone());
+    statistics.add_flight_reservation(start_time, flight_path);
     logger_sender
-        .send((format!("{} | FINISH", flight_reservation.to_string()), LogLevel::INFO))
+        .send((
+            format!("{} | FINISH", flight_reservation.to_string()),
+            LogLevel::INFO,
+        ))
         .expect("Logger mpsc not receving messages");
 }
