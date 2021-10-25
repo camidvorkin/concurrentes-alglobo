@@ -18,16 +18,24 @@
 <span id="18">18</span>
 <span id="19">19</span>
 <span id="20">20</span>
+<span id="21">21</span>
+<span id="22">22</span>
+<span id="23">23</span>
+<span id="24">24</span>
 </pre><pre class="rust">
+<span class="doccomment">//! Flight information message to be sent accross Hotel and Airline actors</span>
 <span class="kw">use</span> <span class="ident">actix::Message</span>;
 <span class="kw">use</span> <span class="ident">common::flight_reservation::FlightReservation</span>;
 
 <span class="doccomment">/// Message made to a Actor Airline or Hotel to start the request of flight reservation to the server.</span>
+<span class="doccomment">///</span>
 <span class="doccomment">/// The message contains the address of the StatsActor for statistics purpuses and the information of the flight reservation.</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Message</span>)]</span>
 <span class="attribute">#[<span class="ident">rtype</span>(<span class="ident">result</span> <span class="op">=</span> <span class="string">&quot;()&quot;</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">InfoFlight</span> {
+    <span class="doccomment">/// The flight itself</span>
     <span class="kw">pub</span> <span class="ident">flight_reservation</span>: <span class="ident">FlightReservation</span>,
+    <span class="doccomment">/// When the flight started to being processed by the program</span>
     <span class="kw">pub</span> <span class="ident">start_time</span>: <span class="ident">std::time::Instant</span>,
 }
 

@@ -103,14 +103,24 @@
 <span id="103">103</span>
 <span id="104">104</span>
 <span id="105">105</span>
+<span id="106">106</span>
+<span id="107">107</span>
+<span id="108">108</span>
+<span id="109">109</span>
+<span id="110">110</span>
+<span id="111">111</span>
+<span id="112">112</span>
+<span id="113">113</span>
 </pre><pre class="rust">
-<span class="doccomment">//! Flight Stats</span>
+<span class="doccomment">//! Thread-safe flight statistics structure</span>
 <span class="kw">use</span> <span class="ident">std::collections::HashMap</span>;
 <span class="kw">use</span> <span class="ident">std::sync</span>::{<span class="ident">Arc</span>, <span class="ident">RwLock</span>};
 
 <span class="doccomment">/// Entity that holds the statistics of the flights</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Statistics</span> {
+    <span class="doccomment">/// Total number of seconds spent handling requests, to then calculate the average time</span>
     <span class="ident">sum_time</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">RwLock</span><span class="op">&lt;</span><span class="ident">i64</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="doccomment">/// Every route and the number of flights taken so that we can report the top most used</span>
     <span class="ident">destinations</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">RwLock</span><span class="op">&lt;</span><span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">String</span>, <span class="ident">i64</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 }
 
@@ -148,6 +158,7 @@
         }
     }
 
+    <span class="doccomment">/// Returns the number of total flights processed</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_total_count</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">i64</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">count</span> <span class="op">=</span> <span class="number">0</span>;
         <span class="kw">let</span> <span class="ident">map</span> <span class="op">=</span> <span class="self">self</span>
@@ -160,11 +171,13 @@
         <span class="ident">count</span>
     }
 
+    <span class="doccomment">/// Returns the number of seconds spent handling requests</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_sum_time</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">i64</span> {
         <span class="kw">let</span> <span class="ident">sum_time</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">sum_time</span>.<span class="ident">read</span>().<span class="ident">expect</span>(<span class="string">&quot;Failed to read from RwLock&quot;</span>);
         <span class="kw-2">*</span><span class="ident">sum_time</span>
     }
 
+    <span class="doccomment">/// Returns the avg flight process time</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_avg_time</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">f64</span> {
         <span class="kw">let</span> <span class="ident">sum_time</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">get_sum_time</span>();
         <span class="kw">let</span> <span class="ident">count</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">get_total_count</span>();
@@ -174,6 +187,7 @@
         (<span class="ident">sum_time</span> <span class="op">/</span> <span class="ident">count</span>) <span class="kw">as</span> <span class="ident">f64</span>
     }
 
+    <span class="doccomment">/// Returns the top N routes taken</span>
     <span class="kw">fn</span> <span class="ident">get_top_destinations</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">n</span>: <span class="ident">usize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">String</span>, <span class="ident">i64</span>)<span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">map</span> <span class="op">=</span> <span class="self">self</span>
             .<span class="ident">destinations</span>
@@ -187,6 +201,7 @@
         <span class="ident">top_destinations</span>.<span class="ident">into_iter</span>().<span class="ident">take</span>(<span class="ident">n</span>).<span class="ident">collect</span>()
     }
 
+    <span class="doccomment">/// Prints the operational stats</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">print_operational_stats</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) {
         <span class="macro">println!</span>(
             <span class="string">&quot;Operational Stats \n\
@@ -199,6 +214,7 @@
         );
     }
 
+    <span class="doccomment">/// Prints the top N routes</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">print_top_routes</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">n</span>: <span class="ident">usize</span>) {
         <span class="kw">let</span> <span class="ident">top_routes</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">get_top_destinations</span>(<span class="ident">n</span>);
         <span class="kw">if</span> <span class="op">!</span><span class="ident">top_routes</span>.<span class="ident">is_empty</span>() {

@@ -1,1 +1,1 @@
-initSidebarItems({"constant":[["DEFAULT_RETRY_SECONDS","If the user doesn’t set the ENVVAR `RETRY_SECONDS` we default to this value"]],"fn":[["get_retry_seconds",""],["read_file","Read CSV file and return split content"]]});
+initSidebarItems({"constant":[["DEFAULT_RETRY_SECONDS","If the user doesn’t set the ENVVAR `RETRY_SECONDS` we default to this value"]],"fn":[["get_retry_seconds","Returns either the ENV VAR value or the default one"],["read_file","Read CSV file and return split content under a Rust Vec"]]});

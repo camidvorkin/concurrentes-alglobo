@@ -179,12 +179,23 @@
 <span id="179">179</span>
 <span id="180">180</span>
 <span id="181">181</span>
+<span id="182">182</span>
+<span id="183">183</span>
+<span id="184">184</span>
+<span id="185">185</span>
+<span id="186">186</span>
+<span id="187">187</span>
+<span id="188">188</span>
+<span id="189">189</span>
+<span id="190">190</span>
+<span id="191">191</span>
+<span id="192">192</span>
 </pre><pre class="rust">
 <span class="doccomment">//! AlGlobo - Simple HTTP server for reserving a flight</span>
 <span class="doccomment">//! ---</span>
 <span class="doccomment">//! This server receives POST calls from the client and attempts to make a reservation to the corresponding airline</span>
 <span class="doccomment">//!</span>
-<span class="doccomment">//! Start the server with `cargo run` or even `cargo run airlines.txt` to specify the airlines file (specified on the `airlines.rs` module)</span>
+<span class="doccomment">//! Start the server with `cargo run --bin threads`</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! The requests are simple POSTs to the route `/` with a JSON body formatted as</span>
 <span class="doccomment">//! ```json</span>
@@ -197,6 +208,10 @@
 <span class="doccomment">//! ```</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! This example could be sent with curl as: `curl -i -d &#39;{&quot;origin&quot;:&quot;EZE&quot;, &quot;destination&quot;:&quot;JFK&quot;, &quot;airline&quot;:&quot;AA&quot;, &quot;hotel&quot;:true}&#39; -H &quot;Content-Type: application/json&quot; -X POST http://localhost:8080/`</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! If a (simulated) airline request isn&#39;t succesful, we retry that request after N seconds have passed. This N can be configured under the RETRY_SECONDS environment variable</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! The supported airlines and the number of requests they can handle simultaneously can be configured in the `configs/airlines.txt` file</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! ---</span>
 <span class="doccomment">//!</span>
@@ -231,14 +246,21 @@
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
 <span class="kw">mod</span> <span class="ident">test</span>;
 
-<span class="doccomment">/// This is the shared state that will be shared across every thread listening to new requests: the airlines configurations and the universal stats entity</span>
+<span class="doccomment">/// This is the shared state that will be shared across every thread listening to new requests</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// [Actix Web State](https://actix.rs/docs/application/#state)</span>
 <span class="kw">struct</span> <span class="ident">AppState</span> {
+    <span class="doccomment">/// Each airline supported by the app, with the number of requests that can be handled simultaneously</span>
     <span class="ident">airlines</span>: <span class="ident">Airlines</span>,
+    <span class="doccomment">/// The flights stats</span>
     <span class="ident">statistics</span>: <span class="ident">Statistics</span>,
+    <span class="doccomment">/// A reference to the logger, so that each thread can log their own actions, in a safe way</span>
     <span class="ident">logger_sender</span>: <span class="ident">Sender</span><span class="op">&lt;</span><span class="ident">LoggerMsg</span><span class="op">&gt;</span>,
 }
 
-<span class="doccomment">/// The main function. It starts a thread for the keyboard listener, and it starts the actix-web server</span>
+<span class="doccomment">/// The main function. It spawns different threads and starts up the HTTP server</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// This function spawns a thread for the logger, a thread for the HTTP server (which in turn, handled by actix web, spawns N workers to receive requests) and listens for keyboard events</span>
 <span class="attribute">#[<span class="ident">actix_web::main</span>]</span>
 <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">main</span>() {
     <span class="comment">// We create a mpsc for the HTTP Server, so that we can run it on its own thread and then gracefully shut it down</span>

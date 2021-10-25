@@ -40,7 +40,9 @@
 <span id="40">40</span>
 <span id="41">41</span>
 <span id="42">42</span>
+<span id="43">43</span>
 </pre><pre class="rust">
+<span class="doccomment">//! Keyboard loop waiting for commands</span>
 <span class="kw">use</span> <span class="ident">common::logger</span>::{<span class="ident">LogLevel</span>, <span class="ident">LoggerMsg</span>};
 
 <span class="kw">use</span> <span class="kw">crate</span><span class="ident">::statistics::Statistics</span>;
@@ -48,7 +50,7 @@
 <span class="kw">use</span> <span class="ident">std::io::prelude</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">std::sync::mpsc::Sender</span>;
 
-<span class="doccomment">/// Possible command strings that trigger the exit action</span>
+<span class="doccomment">/// Possible command strings that trigger the graceful shutdown action</span>
 <span class="kw">const</span> <span class="ident">QUIT_COMMANDS</span>: [<span class="kw-2">&amp;</span><span class="ident">str</span>; <span class="number">2</span>] <span class="op">=</span> [<span class="string">&quot;Q&quot;</span>, <span class="string">&quot;QUIT&quot;</span>];
 
 <span class="doccomment">/// Possible command strings that trigger the show stats action</span>

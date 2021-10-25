@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["LogLevel",""]],"fn":[["init",""],["log",""]],"type":[["LoggerMsg",""]]});
+initSidebarItems({"enum":[["LogLevel","Simple logging levels for our logger"]],"fn":[["init","Creates or overwrites the log file and logs a START message"],["log","Logs the message to the file and, if the level is INFO, prints to console"]],"type":[["LoggerMsg","A log consists of a message and their log level"]]});

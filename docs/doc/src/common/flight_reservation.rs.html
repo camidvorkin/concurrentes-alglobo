@@ -59,6 +59,13 @@
 <span id="59">59</span>
 <span id="60">60</span>
 <span id="61">61</span>
+<span id="62">62</span>
+<span id="63">63</span>
+<span id="64">64</span>
+<span id="65">65</span>
+<span id="66">66</span>
+<span id="67">67</span>
+<span id="68">68</span>
 </pre><pre class="rust">
 <span class="doccomment">//! Flight Reservations Struct</span>
 <span class="kw">use</span> <span class="kw">crate</span><span class="ident">::utils::read_file</span>;
@@ -69,14 +76,20 @@
 <span class="doccomment">/// This struct can be deserialized from a JSON (thanks to serde), making it easier to use, because we now can receive it from the web request in a JSON form</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">FlightReservation</span> {
+    <span class="doccomment">/// The id is set by the program, not the request</span>
     <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">skip</span>)]</span>
     <span class="kw">pub</span> <span class="ident">id</span>: <span class="ident">i32</span>,
+    <span class="doccomment">/// Origin airport</span>
     <span class="kw">pub</span> <span class="ident">origin</span>: <span class="ident">String</span>,
+    <span class="doccomment">/// Destination airport</span>
     <span class="kw">pub</span> <span class="ident">destination</span>: <span class="ident">String</span>,
+    <span class="doccomment">/// Airline</span>
     <span class="kw">pub</span> <span class="ident">airline</span>: <span class="ident">String</span>,
+    <span class="doccomment">/// True if the flight is a package, false if it&#39;s just a flight</span>
     <span class="kw">pub</span> <span class="ident">hotel</span>: <span class="ident">bool</span>,
 }
 
+<span class="doccomment">/// We want the struct to be easily loggable</span>
 <span class="kw">impl</span> <span class="ident">fmt::Display</span> <span class="kw">for</span> <span class="ident">FlightReservation</span> {
     <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fmt::Formatter</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">fmt::Result</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">string</span> <span class="op">=</span> <span class="macro">format!</span>(<span class="string">&quot;{}-&gt;{}&quot;</span>, <span class="self">self</span>.<span class="ident">origin</span>, <span class="self">self</span>.<span class="ident">destination</span>);
@@ -101,12 +114,13 @@
 }
 
 <span class="kw">impl</span> <span class="ident">FlightReservation</span> {
+    <span class="doccomment">/// Returns the flights route (origin + destination)</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_route</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">String</span> {
         <span class="macro">format!</span>(<span class="string">&quot;{} -&gt; {}&quot;</span>, <span class="self">self</span>.<span class="ident">origin</span>, <span class="self">self</span>.<span class="ident">destination</span>)
     }
 }
 
-<span class="doccomment">/// Read CSV file with all the flights requests and return a vector of every FlightReservation</span>
+<span class="doccomment">/// Reads the CSV file with all the flights requests and returns a vector of every FlightReservation</span>
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">from_file</span>(<span class="ident">filename</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">FlightReservation</span><span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="ident">flights_reservations</span> <span class="op">=</span> <span class="ident">read_file</span>(<span class="ident">filename</span>).<span class="ident">expect</span>(<span class="string">&quot;Couldn&#39;t read flights file&quot;</span>);
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">flights</span> <span class="op">=</span> <span class="ident">Vec</span>::<span class="op">&lt;</span><span class="ident">FlightReservation</span><span class="op">&gt;</span><span class="ident">::new</span>();

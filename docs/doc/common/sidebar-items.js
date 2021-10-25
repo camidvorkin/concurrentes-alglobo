@@ -1,1 +1,1 @@
-initSidebarItems({"constant":[["AIRLINES_FILE",""],["TEST_FLIGHTS_FILE",""]],"mod":[["flight_reservation","Flight Reservations Struct"],["logger",""],["simulate_requests",""],["utils","Helper Functions"]]});
+initSidebarItems({"constant":[["AIRLINES_FILE","Airlines CSV config file"],["TEST_FLIGHTS_FILE","Flight CSV file to default if it wasn’t specified as CLA"]],"mod":[["flight_reservation","Flight Reservations Struct"],["logger","Logging functions"],["simulate_requests","Airline and Hotel servers simulations"],["utils","Helper Functions"]]});
