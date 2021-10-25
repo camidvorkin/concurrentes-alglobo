@@ -89,6 +89,8 @@ fn send_to_airline(
 /// We make a reservation by sending the request to the airline webserver and, if we are dealing with packages, to the hotel server
 ///
 /// The result is the union of this two responses
+///
+/// This two requests are to be handled under two different threads, and their results are syncronized under a Mutex and a Condvar
 pub fn reserve(
     flight_reservation: FlightReservation,
     rate_limit: Arc<Semaphore>,

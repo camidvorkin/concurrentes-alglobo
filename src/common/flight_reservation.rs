@@ -7,14 +7,20 @@ use std::fmt;
 /// This struct can be deserialized from a JSON (thanks to serde), making it easier to use, because we now can receive it from the web request in a JSON form
 #[derive(Deserialize, Debug)]
 pub struct FlightReservation {
+    /// The id is set by the program, not the request
     #[serde(skip)]
     pub id: i32,
+    /// Origin airport
     pub origin: String,
+    /// Destination airport
     pub destination: String,
+    /// Airline
     pub airline: String,
+    /// True if the flight is a package, false if it's just a flight
     pub hotel: bool,
 }
 
+/// We want the struct to be easily loggable
 impl fmt::Display for FlightReservation {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut string = format!("{}->{}", self.origin, self.destination);
@@ -39,12 +45,13 @@ impl Clone for FlightReservation {
 }
 
 impl FlightReservation {
+    /// Returns the flights route (origin + destination)
     pub fn get_route(&self) -> String {
         format!("{} -> {}", self.origin, self.destination)
     }
 }
 
-/// Read CSV file with all the flights requests and return a vector of every FlightReservation
+/// Reads the CSV file with all the flights requests and returns a vector of every FlightReservation
 pub fn from_file(filename: &str) -> Vec<FlightReservation> {
     let flights_reservations = read_file(filename).expect("Couldn't read flights file");
     let mut flights = Vec::<FlightReservation>::new();

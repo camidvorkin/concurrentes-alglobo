@@ -1,10 +1,12 @@
-//! Flight Stats
+//! Thread-safe flight statistics structure
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
 /// Entity that holds the statistics of the flights
 pub struct Statistics {
+    /// Total number of seconds spent handling requests, to then calculate the average time
     sum_time: Arc<RwLock<i64>>,
+    /// Every route and the number of flights taken so that we can report the top most used
     destinations: Arc<RwLock<HashMap<String, i64>>>,
 }
 
@@ -42,6 +44,7 @@ impl Statistics {
         }
     }
 
+    /// Returns the number of total flights processed
     pub fn get_total_count(&self) -> i64 {
         let mut count = 0;
         let map = self
@@ -54,11 +57,13 @@ impl Statistics {
         count
     }
 
+    /// Returns the number of seconds spent handling requests
     pub fn get_sum_time(&self) -> i64 {
         let sum_time = self.sum_time.read().expect("Failed to read from RwLock");
         *sum_time
     }
 
+    /// Returns the avg flight process time
     pub fn get_avg_time(&self) -> f64 {
         let sum_time = self.get_sum_time();
         let count = self.get_total_count();
@@ -68,6 +73,7 @@ impl Statistics {
         (sum_time / count) as f64
     }
 
+    /// Returns the top N routes taken
     fn get_top_destinations(&self, n: usize) -> Vec<(String, i64)> {
         let map = self
             .destinations
@@ -81,6 +87,7 @@ impl Statistics {
         top_destinations.into_iter().take(n).collect()
     }
 
+    /// Prints the operational stats
     pub fn print_operational_stats(&self) {
         println!(
             "Operational Stats \n\
@@ -93,6 +100,7 @@ impl Statistics {
         );
     }
 
+    /// Prints the top N routes
     pub fn print_top_routes(&self, n: usize) {
         let top_routes = self.get_top_destinations(n);
         if !top_routes.is_empty() {

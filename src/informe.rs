@@ -2,7 +2,7 @@
 //! ---
 //! Este informe puede ser leido tanto en [PDF](https://camidvorkin.github.io/concurrentes-alglobo/informe.pdf) (gracias a Pandoc) como en [HTML](https://camidvorkin.github.io/concurrentes-alglobo/doc/informe/index.html) (gracias a rustdoc)
 //!
-//! Para documentación especifica del código fuente, que excede a este informe, se puede consultar la [documentación de la aplicación](file:///home/delmazo/Desktop/concurrentes-alglobo/docs/doc/actix/index.html).
+//! Para documentación especifica del código fuente que excede a este informe se puede consultar la [documentación de la aplicación](file:///home/delmazo/Desktop/concurrentes-alglobo/docs/doc/actix/index.html) (en inglés).
 //!
 //! ## Trabajo Práctico
 //!
@@ -10,19 +10,20 @@
 //!
 //! - La primera parte consiste de un servidor HTTP que responde reservas de vuelos, y para cada una levanta distintos hilos.
 //!   - El motor del servidor es [actix-web](https://actix.rs/)
-//!   - Su código fuente se puede encontrar en `src/threads` [(documentación)](https://camidvorkin.github.io/concurrentes-alglobo/doc/threads/index.html)
+//!   - Su código fuente se puede encontrar en [`src/threads`](https://camidvorkin.github.io/concurrentes-alglobo/doc/threads/index.html)
 //!   - El servidor se puede levantar con `cargo run --bin threads` y un ejemplo de un pedido de reserva es `curl -i -d '{"origin":"EZE", "destination":"JFK", "airline":"AA", "hotel":true}' -H "Content-Type: application/json" -X POST http://localhost:8080/`
 //!   - Esta implementación tiene pruebas que pueden ser ejecutadas con `cargo test --bin threads` y una prueba de carga para el servidor se puede ejecutar con `./apache-ab-stresstest.sh` que utiliza la herramienta [Apache ab](http://httpd.apache.org/docs/current/programs/ab.html)
 //!
 //! - La segunda parte consiste en leer un archivo CSV con las distintas reservas de vuelo, y para estas ejecutar un sistema de actores que irán procesandolos.
 //!   - El framework de actores utilizados es [actix](https://github.com/actix/actix)
-//!   - Su código fuente se puede encontrar en `src/actix` [(documentación)](https://camidvorkin.github.io/concurrentes-alglobo/doc/actix/index.html)
+//!   - Su código fuente se puede encontrar en [`src/actix`](https://camidvorkin.github.io/concurrentes-alglobo/doc/actix/index.html)
 //!   - El programa se puede ejecutar con `cargo run --bin actix`
 //!   - Esta implementación tiene pruebas que pueden ser ejecutadas con `cargo test --bin actix`
 //!
-//! - Dentro de `src/common` se encuentran las funciones comunes a ambas implementaciones.
+//! - Dentro de [`src/common`](https://camidvorkin.github.io/concurrentes-alglobo/doc/common/index.html) se encuentran las funciones comunes a ambas implementaciones.
 //!
 //! ## Primera implementación -- Hilos
+//!
 //! *Implementar la aplicación utilizando las herramientas de concurrencia de la biblioteca standard de Rust vistas en clase: Mutex, RwLock, Semáforos (del crate std-semaphore), Channels, Barriers y Condvars.*
 //!
 //! ### Estructuras

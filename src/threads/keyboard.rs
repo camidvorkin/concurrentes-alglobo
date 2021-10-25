@@ -1,3 +1,4 @@
+//! Keyboard loop waiting for commands
 use common::logger::{LogLevel, LoggerMsg};
 
 use crate::statistics::Statistics;
@@ -5,7 +6,7 @@ use std::io;
 use std::io::prelude::*;
 use std::sync::mpsc::Sender;
 
-/// Possible command strings that trigger the exit action
+/// Possible command strings that trigger the graceful shutdown action
 const QUIT_COMMANDS: [&str; 2] = ["Q", "QUIT"];
 
 /// Possible command strings that trigger the show stats action

@@ -1,4 +1,4 @@
-//! Handle airlines config
+//! Airline request actor
 extern crate actix;
 
 use crate::info_flight::InfoFlight;
@@ -13,8 +13,8 @@ use std::collections::HashMap;
 use std::thread;
 use std::time::Duration;
 
-/// WebServer actor airline
 pub struct Airline {
+    /// Ref to the stats actor
     pub addr_statistics: Addr<StatsActor>,
 }
 
@@ -26,8 +26,8 @@ impl Handler<InfoFlight> for Airline {
     type Result = ();
 
     /// Handle the message of InfoFlight and simulates to send it to the server.
-    /// If the server is not available, the message is sent again after a random time. If the server is available,
-    /// the message is sent to the StatsActor for statistics purpuses.
+    ///
+    /// If the server is not available, the message is retried after N seconds
     fn handle(&mut self, msg: InfoFlight, _ctx: &mut Self::Context) -> Self::Result {
         logger::log(
             format!("{} | AIRLINE | Request started", msg.flight_reservation),
@@ -58,9 +58,9 @@ impl Handler<InfoFlight> for Airline {
     }
 }
 
-/// Create a Airline Server for each available airline in filename.
-/// Each Server allows to launch multiple instances of the specific Actor Airline according to the rate limit of the server.
-/// Returns a HashMap with the name of the airline and the address of the server.
+/// Create an Airline actor for each available airline in file
+///
+/// Returns a HashMap with the name of the airline and the address of the actor.
 pub fn from_file(
     filename: &str,
     addr_statistics: Addr<StatsActor>,

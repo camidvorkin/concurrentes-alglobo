@@ -1,4 +1,16 @@
-#![forbid(unsafe_code)]
+//! AlGlobo - Actor system to process flights
+//! ---
+//! This program reads a CSV file with flights data and starts to simulate their reservations
+//!
+//! The CSV file can be either the first argument of the launch command, or the testing default one
+//!
+//! Start the program with `cargo run --bin actix <flightsfile.txt>`
+//!
+//! The CSV has the origin, destination, airline and a boolean that indicates if the flight is a hotel one or not as columns
+//!
+//! The airlines in the flights file must be configured in the airlines file, under the configs dir. This CSV has the airline name and the number of simultaneous flights they can handle
+//!
+//! Every N flights processed, the program will print the current stats of the system. This variable can be configured under the stats actor file
 mod airline;
 mod hotel;
 mod info_flight;
@@ -16,13 +28,15 @@ use stats_actor::{FinishMessage, StatsActor};
 use std::collections::HashMap;
 use std::env;
 
-// Vector of futures to wait for the end of the process
+/// Vector of futures to await for the end of the airline reqs
 type AirlineReq = Request<Airline, InfoFlight>;
+/// Vector of futures to await for the end of the hotel reqs
 type HotelReq = Request<Hotel, InfoFlight>;
 
 // #[cfg(test)]
 // mod test;
 
+/// Make a flight reservation by sending it to the airline and hotel actors
 pub async fn reserve(
     flights: Vec<FlightReservation>,
     addr_airlines: HashMap<String, Addr<Airline>>,
@@ -62,6 +76,9 @@ pub async fn reserve(
 }
 
 #[actix_rt::main]
+/// Main function of the actor system
+///
+/// It reads the CLA flights file (or defaults to a testing purposes one), starts the actors and processes all the requests. Then, it gracefully shuts down the system
 async fn main() {
     logger::init();
 

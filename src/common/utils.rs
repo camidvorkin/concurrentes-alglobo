@@ -4,7 +4,9 @@ use std::error::Error;
 use std::fs::File;
 use std::io::Read;
 
-/// Read CSV file and return split content
+/// Read CSV file and return split content under a Rust Vec
+///
+/// Helpful for the flights and airlines files
 pub fn read_file(filename: &str) -> Result<Vec<Vec<String>>, Box<dyn Error>> {
     let mut file = File::open(filename)?;
     let mut contents = String::new();
@@ -20,6 +22,7 @@ pub fn read_file(filename: &str) -> Result<Vec<Vec<String>>, Box<dyn Error>> {
 /// If the user doesn't set the ENVVAR `RETRY_SECONDS` we default to this value
 pub const DEFAULT_RETRY_SECONDS: u64 = 2;
 
+/// Returns either the ENV VAR value or the default one
 pub fn get_retry_seconds() -> u64 {
     match env::var("RETRY_SECONDS") {
         Ok(val) => val

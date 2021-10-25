@@ -1,4 +1,4 @@
-//! Handle airlines config
+//! Handle airlines config file
 use common::utils::read_file;
 use std::collections::HashMap;
 use std::sync::Arc;
