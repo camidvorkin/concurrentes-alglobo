@@ -42,9 +42,11 @@
 //!
 //! - Se inicializa la entidad de estadisticas, que va a ser accedida por cada pedido de vuelo, y por ende debe ser bien protegida frente a problemas de sincronización de hilos.
 //!
-//! - Después de esto se levanta el thread `http-server` que levantara al servidor de actix-web. Por detrás, actix-web levanta el hilo `actix-server ac` y los N hilos `actix-rt:worker` que escuchan nuevos requests. Como explica [en la documentación](https://actix.rs/docs/server/#multi-threading), esta cantidad de trabajadores puede ser configurada, y es por defecto la cantidad de CPUs en el sistema donde se ejecuta. Estos hilos no son manejados por nosotros, y su finalización se logra llamando a [actix_web::Server::stop](https://docs.rs/actix-web/3.0.2/actix_web/dev/struct.Server.html#method.stop), el cual va a hacer un *graceful shutdown* del servidor (de estar procesando algo actualmente, esperará a que el pedido sea finalizado). Este servidor se crea con un `AppState` que es compartido por todos los hilos creados por actix-web y que contiene las distintas aerolíneas, la entidad de estadísticas de la aplicación y una referencia al `mpsc` del logger. Tal como se explica [en la documentación](https://actix.rs/docs/application/#shared-mutable-state) de actix-web, el estado debe estar seguramente compartido para que los hilos no entren en ningun tipo de problema de sincronía al acceder a este.
+//! - Después de esto se levanta el thread `http-server` que levantara al servidor de actix-web. Por detrás, actix-web levanta el hilo `actix-server ac` y los N hilos `actix-rt:worker` que escuchan nuevos requests. Como explica [en la documentación](https://actix.rs/docs/server/#multi-threading), esta cantidad de trabajadores puede ser configurada, y es por defecto la cantidad de CPUs en el sistema donde se ejecuta. Estos hilos no son manejados por nosotros, y su finalización se logra llamando a [actix_web::Server::stop](https://docs.rs/actix-web/3.0.2/actix_web/dev/struct.Server.html#method.stop), el cual va a hacer un *graceful shutdown* del servidor (de estar procesando algo actualmente, esperará a que el pedido sea finalizado).
 //!
-//! - El hilo principal pasa a estar escuchando activamente por eventos del teclado, para poder imprimir las estadísticas de los vuelos procesados (al recibir la tecla `S`) o para saber si comenzar el *graceful shutdown* (al recibir la tecla `Q`)
+//! - Este servidor se crea con un `AppState` que es compartido por todos los hilos creados por actix-web y que contiene las distintas aerolíneas, la entidad de estadísticas de la aplicación y una referencia al `mpsc` del logger. Tal como se explica [en la documentación](https://actix.rs/docs/application/#shared-mutable-state) de actix-web, el estado debe estar seguramente compartido para que los hilos no entren en ningun tipo de problema de sincronía al acceder a este.
+//!
+//! - El hilo principal pasa a estar escuchando activamente eventos del teclado, para poder imprimir las estadísticas de los vuelos procesados (al recibir la tecla `S`) o para saber si comenzar el *graceful shutdown* (al recibir la tecla `Q`)
 //!
 //! ### Reserva de vuelos
 //!
@@ -56,22 +58,22 @@
 //!  {
 //!   "origin": "EZE", // Aeropuerto de origen
 //!   "destination": "JFK", // Aeropuerto de destino
-//!   "airline": "AA", // Aerolinea, que debe ser una de las aerolíneas disponibles en el programa
+//!   "airline": "AA", // Aerolínea, que debe ser una de las aerolíneas disponibles en el programa
 //!   "hotel": true // Indica si el pedido debe pasar por el servidor del hotel o no
 //!  }
 //! ```
 //!
-//! Luego de chequear que el aeropuerto sea valido, este handler llama a `alglobo::reserve`, la función con la lógica principal del programa (encontrada en `src/threads/alglobo.rs`). Lo que logra esta función es concurrentemente ejecutar ambos requests (al servidor de la aerolínea y al servidor del hotel) y esperar a que ambos terminen, y luego, devolver el resultado de ambos. Para esto, se levantan dos hilos (uno con el nombre de la aerolínea, como en nuestro ejemplo la aerolínea `AA`, y otro simplemente llamado `hotel`) que simulan ambos pedidos a los servers.
+//! Luego de chequear que el aeropuerto sea valido, este handler llama a `alglobo::reserve`, la función con la lógica principal del programa (encontrada en `src/threads/alglobo.rs`). Lo que logra esta función es concurrentemente ejecutar ambos requests (al servidor de la aerolínea y al servidor del hotel) y esperar a que ambos terminen, y luego, devolver el resultado de ambos. En el caso de la reserva ser de solo vuelo, y no de hotel, no se manda este pedido adicional. Para esto, se levantan dos hilos (uno con el nombre de la aerolínea, como en nuestro ejemplo la aerolínea `AA`, y otro simplemente llamado `hotel`) que simulan ambos pedidos a los servers.
 //!
 //! El servidor del hotel es único para todo el programa, y no tiene límites. Todos los pedidos pueden ir directamente a él y esperar la respuesta. La simulación es siempre exitosa, y el pedido solo consta de esperar un tiempo al azar de no más de un segundo y medio. Esta espera se simula con `std::thread::sleep()`.
 //!
-//! El servidor de la aerolínea solo puede atender N pedidos de vuelos simultaneamente. Esto se logra con un semáforo (`std_semaphore::Semaphore`) inicializado con su contador interno en la cantidad de pedidos configurados en el archivo CSV de aerolíneas. Cada pedido que ingresa adquiere el semáforo (decrementando en uno el contador), una vez que finaliza el pedido se incrementa el contador nuevamente, para dar lugar al próximo hilo. Cada hilo solo puede tomar el semaforo si el contador interno es positivo.
+//! El servidor de la aerolínea solo puede atender N pedidos de vuelos simultaneamente. Esto se logra con un semáforo (`std_semaphore::Semaphore`) inicializado con su contador interno en la cantidad de pedidos que puede soportar esa aerolínea. Cada pedido que ingresa adquiere el semáforo (decrementando en uno el contador), una vez que finaliza el pedido se incrementa el contador nuevamente, para dar lugar al próximo hilo. Cada hilo solo puede tomar el semaforo si el contador interno es positivo.
 //!
-//! La simulación de la aerolínea puede ser exitosa o rechazar el pedido. Si este rechazado, el sistema espera N segundos para reintentarlo. La cantidad de segundos para reintentar es configurable vía la variable de entorno `RETRY_SECONDS`.
+//! La simulación de la aerolínea puede ser exitosa o fallida. Si el pedido rechazado, el sistema espera N segundos para reintentarlo. Esta cantidad de segundos es configurable vía la variable de entorno `RETRY_SECONDS`.
 //!
-//! El resultado final de la reserva entonces necesitará que ambos pedidos (hotel y aerolínea) hayan finalizado exitosamente. Una vez terminado, la función se encargara de agregar las estadísticas del vuelo. No se puede agregar las estadísticas ni finalizar el request si ambos threads no finalizaro, y eso se resuelve a partir de monitores. Esta herramienta nos brinda la posibilidad de esperar hasta que se cumpla una condición, y así logra la sincronización entre ambos requests.
+//! El resultado final de la reserva entonces necesitará que ambos pedidos (hotel y aerolínea) hayan finalizado exitosamente. Una vez terminado, la función se encargará de agregar las estadísticas del vuelo. No se puede agregar las estadísticas ni finalizar el request si ambos threads no finalizaron, y eso se resuelve gracias a un monitor. Esta herramienta consiste de un mutex (`std::sync::Mutex`) y una **condition variable** (`std::sync::Condvar`) y nos brinda la posibilidad de esperar hasta que se cumpla una condición.
 //!
-//! Una vez que se completa el pedido, se procede a agregar las estadísticas correspondientes. Esto incluye agregar el tiempo de procesamiento en las simulaciones, y la ruta solicitada, para luego poder reportar estas distintas estadísticas operacionales y de negocio. Estas estadisticas están detras de un lock de escritura y lectura, para evitar que haya problemas de sincronización entre distintos pedidos.
+//! Una vez que se completa el pedido, se procede a agregar las estadísticas correspondientes. Esto incluye agregar el tiempo de procesamiento en las simulaciones, y la ruta solicitada, para luego poder reportar las estadísticas operacionales y las de negocio. Estas estadisticas están detras de un lock de escritura y lectura, para evitar que haya problemas de sincronización entre distintos pedidos.
 //!
 //! ![](../../img/threads.jpg)
 //!
@@ -79,15 +81,15 @@
 //!
 //! ![](../../img/struct-threads.png)
 //!
-//! - La estructura principal del programa es la que representa pedidos de reservas de vuelos, **FlightReservation**. Esta estructura, en esta implementación, es des-serializable (con ayuda de [serde](https://serde.rs/) para poder ser recibida como un JSON en el cuerpo del `POST`. Esta estructura entonces contiene los 4 atributos que requiere un vuelo (aeropuertos, aerolínea, y un indicador de hotel) y un id único para cada pedido.
+//! - La estructura principal del programa es la que representa pedidos de reservas de vuelos, **FlightReservation**. Esta estructura, en esta implementación, es des-serializable (con ayuda de [serde](https://serde.rs/)) para poder ser recibida como un JSON en el cuerpo del `POST`. Esta estructura entonces contiene los 4 atributos que requiere un vuelo (aeropuertos, aerolínea, y un indicador de hotel).
 //!
-//! - La entidad que se encarga de registrar las stadisticas, **Statistics** es una estructura que los distintos hilos de reservas irán accediendo, y por ende hay que proteger el acceso a sus atributos con un lock. Los únicos atributos que contiene son un acumulador de tiempo de reservas, para poder calcular el tiempo promedio de procesamiento, y un `HashMap` en donde se irán guardando todas las rutas (origen -> destino) realizadas para poder llevar una estadística de las rutas más frecuentes. Esta estructura contiene métodos para poder calcular e imprimir estas estadísticas, Los métodos de impresión son ejecutados por el usuario al escribir en la consola una `S`.
+//! - La entidad que se encarga de registrar las stadisticas, **Statistics** es una estructura que los distintos hilos de reservas irán accediendo, y por ende hay que proteger el acceso a sus atributos con un lock. Los únicos atributos que contiene son un acumulador de tiempo de reservas, para poder calcular el tiempo promedio de procesamiento, y un `HashMap` en donde se irán guardando todas las rutas (origen -> destino). Esta estructura contiene métodos para poder calcular e imprimir estas estadísticas. Los métodos de impresión son ejecutados por el usuario al escribir en la consola una `S`.
 //!
-//! - Las aerolíneas disponibles en el programa son simplemente un `HashMap` declarado con `pub type Airlines = HashMap<String, Arc<Semaphore>>` que se generan a partir del archivo CSV de configuración. Este `HashMap` tiene como clave el nombre de la aerolínea y como valor un semáforo, para evitar que más de N pedidos de vuelo sean procesados a la vez.
+//! - Las aerolíneas disponibles en el programa son simplemente un `HashMap` declarado con `pub type Airlines = HashMap<String, Arc<Semaphore>>` que se generan a partir del archivo CSV de configuración. Este `HashMap` tiene como clave el nombre de la aerolínea y como valor un semáforo, para lograr el **rate limit** de cada aerolínea.
 //!
 //! - El **logger** es simplemente una función para escribir al archivo de log de la aplicación, pero encapsulado en un canal `mpsc` para hacer que el acceso a este archivo sea ordenado.
 //!
-//! - Estas estructuras globales del sistema (las aerolineas disponibles y las stadisticas), junto al recibidor del `mpsc` del logger componen el estado mutable compartido que se reparte entre todos los hilos de los pedidos de vuelos, **AppState**.
+//! - Estas estructuras globales del sistema (las aerolineas disponibles y las stadisticas), junto al recibidor del logger componen el estado mutable compartido que se reparte entre todos los hilos de los pedidos de vuelos, **AppState**.
 //!
 //! ## Segunda implementación -- Actores
 //!
