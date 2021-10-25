@@ -241,6 +241,10 @@
 <span id="241">241</span>
 <span id="242">242</span>
 <span id="243">243</span>
+<span id="244">244</span>
+<span id="245">245</span>
+<span id="246">246</span>
+<span id="247">247</span>
 </pre><pre class="rust">
 <span class="doccomment">//! Informe</span>
 <span class="doccomment">//! ---</span>
@@ -321,7 +325,7 @@
 <span class="doccomment">//!</span>
 <span class="doccomment">//! ### Estructuras</span>
 <span class="doccomment">//!</span>
-<span class="doccomment">//! CLAVAR ACA UN DIAGRAMA</span>
+<span class="doccomment">//! ![](../../img/struct-threads.png)</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! #### Flight Reservation</span>
 <span class="doccomment">//!</span>
@@ -388,6 +392,8 @@
 <span class="doccomment">//!</span>
 <span class="doccomment">//! ### Actores</span>
 <span class="doccomment">//!</span>
+<span class="doccomment">//! ACA VA UN DIAGRAMA DE ACTORES</span>
+<span class="doccomment">//!</span>
 <span class="doccomment">//! #### StatActor</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! El actor `StatActor` se encarga de manejar las estadísticas de la aplicación. La estructura del actor cuenta con la acumulacion de los tiempos que toman los request, un `HashMap` con las rutas solicitadas y un `HashMap` con los IDs de los request junto con un contador para saber si finalizó su procesamiento.</span>
@@ -450,6 +456,8 @@
 <span class="doccomment">//!</span>
 <span class="doccomment">//! - Para la parte A, se realizan pruebas de volumen gracias a el uso de Actix web, en donde con mayor facilidad se logró enviar muchos pedidos en simultáneo para validar el funcionamiento del programa.</span>
 <span class="doccomment">//! - Se realizan pruebas automatizadas en donde se realizan varias pruebas de una vez, para validar el funcionamiento del programa, implementando nuevamente aquellos métodos que no son determinísticos.</span>
+<span class="doccomment">//!- EXPLICAR QUE TENEMOS MUCHOS TESTS PARA ACTIX EN src/test/test_flights.txt</span>
+<span class="doccomment">//!- Escribir lo de apache AB</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! ## Post Mortem</span>
 <span class="doccomment">//!</span>
