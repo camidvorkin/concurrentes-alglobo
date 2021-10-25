@@ -39,7 +39,7 @@ type HotelReq = Request<Hotel, InfoFlight>;
 /// Make a flight reservation by sending it to the airline and hotel actors
 pub async fn reserve(
     flights: Vec<FlightReservation>,
-    addr_airlines: HashMap<String, Addr<Airline>>,
+    airlines: HashMap<String, Addr<Airline>>,
     addr_hotel: Addr<Hotel>,
 ) -> Vec<(AirlineReq, Option<HotelReq>)> {
     let mut responses: Vec<(AirlineReq, Option<HotelReq>)> = Vec::new();
@@ -50,7 +50,7 @@ pub async fn reserve(
             flight_reservation: flight_reservation.clone(),
             start_time,
         };
-        let addr_airline = match addr_airlines.get(&flight_reservation.airline) {
+        let addr_airline = match airlines.get(&flight_reservation.airline) {
             None => {
                 logger::log(
                     format!("{} | BAD REQUEST | Airport not present", flight_reservation),
@@ -95,7 +95,7 @@ async fn main() {
     let addr_statistics_hotel = addr_statistics.clone();
     let addr_statistics_airline = addr_statistics.clone();
 
-    let addr_airlines = airline::from_file(AIRLINES_FILE, addr_statistics_airline);
+    let airlines = airline::from_file(AIRLINES_FILE, addr_statistics_airline);
     logger::log("Airlines file proccessed".to_string(), LogLevel::TRACE);
 
     let hotel_count = flights.iter().filter(|f| f.hotel).count();
@@ -107,7 +107,7 @@ async fn main() {
         LogLevel::TRACE,
     );
     let responses: Vec<(AirlineReq, Option<HotelReq>)> =
-        reserve(flights, addr_airlines, addr_hotel).await;
+        reserve(flights, airlines, addr_hotel).await;
 
     for (flight, hotel) in responses {
         let _flight = flight.await;
