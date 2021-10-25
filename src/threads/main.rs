@@ -70,13 +70,15 @@ struct AppState {
 /// This function spawns a thread for the logger, a thread for the HTTP server (which in turn, handled by actix web, spawns N workers to receive requests) and listens for keyboard events
 #[actix_web::main]
 async fn main() {
-    // We create a mpsc for the HTTP Server, so that we can run it on its own thread and then gracefully shut it down
-    // https://actix.rs/docs/server/
-    let (server_sender, server_receiver) = mpsc::channel();
-
     let (logger_sender, logger_receiver): (Sender<LoggerMsg>, Receiver<LoggerMsg>) =
         mpsc::channel();
     let logger_sender_webserver = logger_sender.clone();
+
+    // We create a mpsc for the HTTP Server, so that we can run it on its own thread and then gracefully shut it down.
+    // Without this mpsc we woudln't have any way to reference the server created, and we wouldn't be able to shut it down
+    // This is also the reason why we run the server on a different thread, so that we can send it through the mpsc instead of having a big `await` on our main and no way to call a stop() function. All of this is explained on actix-web's docs
+    // https://actix.rs/docs/server/#the-http-server
+    let (server_sender, server_receiver) = mpsc::channel();
 
     let _logger_thread = thread::Builder::new()
         .name("logger".to_string())
@@ -133,7 +135,7 @@ async fn main() {
         .send(("Keyboard started listening".to_string(), LogLevel::TRACE))
         .expect("Logger mpsc not receving messages");
 
-    // Reference to the server, so that we can then shut it down
+    // Reference to the server, so that we can shut it down
     let srv = server_receiver
         .recv()
         .expect("Couldn't receive server ref through mpsc");
@@ -142,10 +144,11 @@ async fn main() {
     // Anything after this line is part of the graceful shutdown
     keyboard_loop(statistics, &logger_sender);
 
-    // We stop the server, which joins the server thread (and therefore drops any lingering mpsc ref we have)
+    // We stop the server, which joins the server thread
     // This is a graceful shutdown, so any request still in place will be completed before shutdown
     srv.stop(true).await;
 
+    // We send a loglevel::FINISH message, which breaks the logger infinite loop
     logger_sender
         .send(("Shut down server".to_string(), LogLevel::FINISH))
         .expect("Logger mpsc not receving messages");
