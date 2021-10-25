@@ -103,7 +103,7 @@ async fn main() {
         addr_statistics: addr_statistics_hotel.to_owned(),
     });
     logger::log(
-        format!("Hotel SyncArbier with {} count created", hotel_count),
+        format!("Hotel SyncArbiter with {} count created", hotel_count),
         LogLevel::TRACE,
     );
     let responses: Vec<(AirlineReq, Option<HotelReq>)> =
