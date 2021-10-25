@@ -77,7 +77,7 @@
 //!
 //! ### Estructuras
 //!
-//! CLAVAR ACA UN DIAGRAMA
+//! ![](../../img/struct-threads.png)
 //!
 //! #### Flight Reservation
 //!
