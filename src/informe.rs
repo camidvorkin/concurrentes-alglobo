@@ -95,9 +95,9 @@
 //!
 //! *Implementar la aplicación basada en el modelo de Actores, utilizando el framework Actix.*
 //!
-//! La segunda implementación del programa es a base del modelo de actores. Esto implica que remodelemos el programa original (buscando reutilizar la mayor cantidad de código posible) y deleguemos a `actix` la creación de hilos del programa, olvidandonos de `thread::spawn()` y las herramientras tradicionales de concurrencia utilizadas en la implementación anterior, como los semáforos o los monitores.
+//! La segunda implementación del programa es en base al modelo de actores. Esto implica que remodelemos el programa original (buscando reutilizar la mayor cantidad de código posible) y deleguemos a `actix` la creación de hilos del programa, olvidándonos de `thread::spawn()` y las herramientras tradicionales de concurrencia utilizadas en la implementación anterior, como los semáforos o los monitores.
 //!
-//! A diferencia de la primera implementación, en vez de tener un servidor HTTP, sencillamente tenemos un archivo CSV (que puede ser pasado por argumento de linea de comando, o por defecto se utiliza uno de prueba propio) que contiene una lista de los pedidos de vuelos a reservar. La idea principal del programa es crear un sistema de actores, iterar este archivo, y por cada uno levantar actores que se encargaran de la reserva
+//! A diferencia de la primera implementación, en vez de tener un servidor HTTP, sencillamente tenemos un archivo CSV (que puede ser pasado por argumento de linea de comando, o por defecto se utiliza uno de prueba propio) que contiene una lista de los pedidos de vuelos a reservar. La idea principal del programa es crear un sistema de actores, iterar este archivo, y por cada uno levantar actores que se encargarán de la reserva.
 //!
 //! CAMBIAME En esta captura de `htop` podemos ver que al correr el programa, en un ejemplo de 10 vuelos sin hotel, y con una aerolínea que tiene como límite 3 pedidos simultaneos, se levantan 3 hilos `actix` que se encargan de la reserva. Estos hilos son especificados al haber usado un `SyncArbiter`, que nos proporciona multi-threading en el framework.
 //!
@@ -105,9 +105,11 @@
 //!
 //! ### Funcionamiento
 //!
-//! Lo primero que sucede en la función `main` de `src/actix/main.rs` es leer el archivo de vuelos y convertirlo en la estructura `FlightReservation`, que se reutiliza de la implementación anterior.
+//! Lo primero que sucede en la función `main` de `src/actix/main.rs` es leer el archivo de vuelos y convertirlo en un vector de la estructura `FlightReservation`, que se reutiliza de la implementación anterior.
 //!
-//! Luego, se procesa el archivo CSV de aerolíneas, pero en vez de usar un `HashMap` de semáforos, ahora buscamos hacer un `HashMap` de actores, ya que en esta implementación cambia el modelo de concurrencia. Por lo tanto, se reimplementa el archivo `airlines.rs` y se hace que el CSV pase a...
+//! Luego, se procesa el archivo CSV de aerolíneas, pero en vez de usar un `HashMap` de semáforos, ahora buscamos hacer un `HashMap` de actores, ya que en esta implementación cambia el modelo de concurrencia. Por lo tanto, se reimplementa el archivo `airlines.rs` y se hace que el CSV pase a... CAMBIAME
+//!
+//! Finalmente, esta función hará cada reserva solicitada, levantando un actor para cada simulación de request, y mandando los mensajes pertinentes entre todo el sistema de actores.
 //!
 //! ### Actores y Mensajes
 //!
@@ -171,44 +173,5 @@
 //! }
 //! ```
 //!
-//! ## Testing
 //!
-//! - Para la parte A, se realizan pruebas de volumen gracias a el uso de Actix web, en donde con mayor facilidad se logró enviar muchos pedidos en simultáneo para validar el funcionamiento del programa.
-//! - Se realizan pruebas automatizadas en donde se realizan varias pruebas de una vez, para validar el funcionamiento del programa, implementando nuevamente aquellos métodos que no son determinísticos.
-//!- EXPLICAR QUE TENEMOS MUCHOS TESTS PARA ACTIX EN src/test/test_flights.txt
-//!- Escribir lo de apache AB
-//!
-//! ## Post Mortem
-//!
-//! - try_send()
-//! - condvar por barrieres
-//! - loom
-//! - atixweb en actroes
-//! - exxplicar por qué no usamos stdout para el log (las stats te lo cagan)
-//!
-//!
-//! Ideas de Todos:
-//!
-//! Hablar de correctitud, estado mutable compartido, por que no es fork join, barriers y semáforos
-//!
-//! Clavar fotos y docuemntacion de actix web para hablar de los N workers que levanta para escuchar los gets
-//!
-//! Una explicación del diseño y de las decisiones tomadas para la implementación de la solución.
-//!
-//! Detalle de resolución de la lista de tareas anterior.
-//!
-//! Diagrama que refleje los threads, el flujo de comunicación entre ellos y los datos que intercambian.
-//!
-//! Una explicación del diseño y de las decisiones tomadas para la implementación de la solución.
-//!
-//!     Detalle de resolución de la lista de tareas anterior.
-//!
-//!     Diagrama que refleje los threads, el flujo de comunicación entre ellos y los datos que intercambian.
-//!
-//!     Diagramas de entidades realizados (structs y demás).
-//!
-//! Clavar un par de screenshots de htop
-//!
-//! Diagramas de entidades realizados (structs y demás).
-
 fn main() {}
