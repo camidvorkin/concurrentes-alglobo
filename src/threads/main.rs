@@ -159,7 +159,7 @@ async fn main() {
 fn reservation(req: web::Json<FlightReservation>, appstate: web::Data<AppState>) -> HttpResponse {
     appstate
         .logger_sender
-        .send((format!("GET / -- {:?}", req), LogLevel::INFO))
+        .send((format!("POST / -- {:?}", req), LogLevel::INFO))
         .expect("Logger mpsc not receving messages");
 
     let flight: FlightReservation = req.to_owned();
