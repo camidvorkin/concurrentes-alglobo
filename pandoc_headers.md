@@ -20,7 +20,7 @@ header-includes: |
   \usepackage{fancyhdr}
   \pagestyle{fancy}
   \fancyhead[L]{Grupo D* \\ del Mazo - Di Santo - Dvorkin \\ 2021C2}
-  \fancyhead[R]{[71.59] Técnicas de Programación Concurrente I \\ AlGlobo}
+  \fancyhead[R]{[71.59] Técnicas de Programación Concurrente I \\ TP1: AlGlobo}
 
   \usepackage{listings}
   \lstset{

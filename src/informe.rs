@@ -2,7 +2,7 @@
 //! ---
 //! Este informe puede ser leido tanto en [PDF](https://camidvorkin.github.io/concurrentes-alglobo/informe.pdf) (gracias a Pandoc) como en [HTML](https://camidvorkin.github.io/concurrentes-alglobo/doc/informe/index.html) (gracias a rustdoc)
 //!
-//! Para documentación especifica del código fuente que excede a este informe se puede consultar la [documentación de la aplicación](file:///home/delmazo/Desktop/concurrentes-alglobo/docs/doc/actix/index.html) (en inglés).
+//! Para documentación especifica del código fuente que excede a este informe se puede consultar la [documentación de la aplicación](https://camidvorkin.github.io/concurrentes-alglobo/doc/actix/index.html) (en inglés).
 //!
 //! ## Trabajo Práctico
 //!
@@ -10,27 +10,79 @@
 //!
 //! - La primera parte consiste de un servidor HTTP que responde reservas de vuelos, y para cada una levanta distintos hilos.
 //!   - El motor del servidor es [actix-web](https://actix.rs/)
-//!   - Su código fuente se puede encontrar en [`src/threads`](https://camidvorkin.github.io/concurrentes-alglobo/doc/threads/index.html)
+//!   - Su código fuente se puede encontrar en [src/threads](https://camidvorkin.github.io/concurrentes-alglobo/doc/threads/index.html)
 //!   - El servidor se puede levantar con `cargo run --bin threads` y un ejemplo de un pedido de reserva es `curl -i -d '{"origin":"EZE", "destination":"JFK", "airline":"AA", "hotel":true}' -H "Content-Type: application/json" -X POST http://localhost:8080/`
 //!   - Esta implementación tiene pruebas que pueden ser ejecutadas con `cargo test --bin threads` y una prueba de carga para el servidor se puede ejecutar con `./apache-ab-stresstest.sh` que utiliza la herramienta [Apache ab](http://httpd.apache.org/docs/current/programs/ab.html)
 //!
 //! - La segunda parte consiste en leer un archivo CSV con las distintas reservas de vuelo, y para estas ejecutar un sistema de actores que irán procesandolos.
 //!   - El framework de actores utilizados es [actix](https://github.com/actix/actix)
-//!   - Su código fuente se puede encontrar en [`src/actix`](https://camidvorkin.github.io/concurrentes-alglobo/doc/actix/index.html)
-//!   - El programa se puede ejecutar con `cargo run --bin actix`
+//!   - Su código fuente se puede encontrar en [src/actix](https://camidvorkin.github.io/concurrentes-alglobo/doc/actix/index.html)
+//!   - El programa se puede ejecutar con `cargo run --bin actix` que lee las reservas de un archivo CSV de prueba, o ejecutar con `cargo run --bin actix <archivo_de_vuelos>` para proporcionar un CSV propio. Una fila de ejemplo del CSV es `EZE,JFK,AA,true`
 //!   - Esta implementación tiene pruebas que pueden ser ejecutadas con `cargo test --bin actix`
 //!
-//! - Dentro de [`src/common`](https://camidvorkin.github.io/concurrentes-alglobo/doc/common/index.html) se encuentran las funciones comunes a ambas implementaciones.
+//! - Dentro de [src/common](https://camidvorkin.github.io/concurrentes-alglobo/doc/common/index.html) se encuentran las funciones comunes a ambas implementaciones.
 //!
 //! ## Primera implementación -- Hilos
 //!
 //! *Implementar la aplicación utilizando las herramientas de concurrencia de la biblioteca standard de Rust vistas en clase: Mutex, RwLock, Semáforos (del crate std-semaphore), Channels, Barriers y Condvars.*
 //!
+//! La primera implementación del modelo es a base de hilos y de un servidor HTTP que esta constantemente escuchando nuevas reservas.
+//!
+//! Los hilos activos al estar el sistema escuchando por nuevos requests, y los hilos activos al estar procesando un solo request se pueden ver en las siguientes dos imagenes:
+//!
+//! ![](../../img/htop-threads.png)
+//!
+//! ### Hilos y funcionamiento
+//!
+//! La función `main` en `src/threads/main.rs` levanta los distintos hilos y el servidor en sí.
+//!
+//! - Lo primero que hace es levantar el hilo `logger` el cual se encargará de escribir tanto por consola como en el archivo de log los mensajes que se van a ir recibiendo. Este hilo no es más que un típico problema productor-consumidor: contiene un canal (`mpsc`) que está constantemente escuchando mensajes que le puede mandar el sistema, y estos se vierten sobre un archivo de log. La implementación de canal y mensajes es para evitar que dos hilos accedan a la vez al recurso compartido (el archivo en sí). Este loop infinito se termina cuando el logger recibe que debe registrar un mensaje de finalización.
+//!
+//! - Se procesa un archivo CSV de aerolineas (configurable en el directorio `src/configs`) que contiene los nombres de las aerolineas y la cantidad de pedidos simultaneos que pueden tomar.
+//!
+//! - Se inicializa la entidad de estadisticas, que va a ser accedida por cada pedido de vuelo, y por ende debe ser bien protegida frente a problemas de sincronización de hilos.
+//!
+//! - Después de esto se levanta el thread `http-server` que levantara al servidor de actix-web. Por detrás, actix-web levanta el hilo `actix-server ac` y los N hilos `actix-rt:worker` que escuchan nuevos requests. Como explica [en la documentación](https://actix.rs/docs/server/#multi-threading), esta cantidad de trabajadores puede ser configurada, y es por defecto la cantidad de CPUs en el sistema donde se ejecuta. Estos hilos no son manejados por nosotros, y su finalización se logra llamando a [actix_web::Server::stop](https://docs.rs/actix-web/3.0.2/actix_web/dev/struct.Server.html#method.stop), el cual va a hacer un *graceful shutdown* del servidor (de estar procesando algo actualmente, esperará a que el pedido sea finalizado). Este servidor se crea con un `AppState` que es compartido por todos los hilos creados por actix-web y que contiene las distintas aerolineas, la entidad de estadísticas de la aplicación y una referencia al `mpsc` del logger. Tal como se explica [en la documentación](https://actix.rs/docs/application/#shared-mutable-state) de actix-web, el estado debe estar seguramente compartido para que los hilos no entren en ningun tipo de problema de sincronía al acceder a este.
+//!
+//! - El hilo principal pasa a estar escuchando activamente por eventos del teclado, para poder imprimir las estadísticas de los vuelos procesados (al recibir la tecla `S`) o para saber si comenzar el *graceful shutdown* (al recibir la tecla `Q`)
+//!
+//! ### Reserva de vuelos
+//!
+//! Una vez que ya tenemos todo el sistema inicializado, lo más importante es ver que sucede al recibir un request.
+//!
+//! El servidor tiene un *handler* de `POST` a la ruta `/` donde se reciben vuelos en forma de archivos json que especifican el vuelo a reservar:
+//!
+//! ```json
+//!  {
+//!   "origin": "EZE", // Aeropuerto de origen
+//!   "destination": "JFK", // Aeropuerto de destino
+//!   "airline": "AA", // Aerolinea, que debe ser una de las aerolineas disponibles en el programa
+//!   "hotel": true // Indica si el pedido debe pasar por el servidor del hotel o no
+//!  }
+//! ```
+//!
+//! Luego de chequear que el aeropuerto sea valido, este handler llama a `alglobo::reserve`, la función con la lógica principal del programa (encontrada en `src/threads/alglobo.rs`). Lo que logra esta función es concurrentemente ejecutar ambos requests (al servidor de la aerolinea y al servidor del hotel) y esperar a que ambos terminen, y luego, devolver el resultado de ambos. Para esto, se levantan dos hilos (uno con el nombre de la aerolinea, como en nuestro ejemplo la aerolinea `AA`, y otro simplemente llamado `hotel`) que simulan ambos pedidos a los servers.
+//!
+//! El servidor del hotel es único para todo el programa, y no tiene límites. Todos los pedidos pueden ir directamente a él y esperar la respuesta. La simulación es siempre exitosa, y el pedido solo consta de esperar un tiempo al azar de no más de un segundo y medio. Esta espera se simula con `std::thread::sleep()`.
+//!
+//! El servidor de la aerolinea solo puede atender N pedidos de vuelos simultaneamente. Esto se logra con un semáforo (`std_semaphore::Semaphore`) inicializado con su contador interno en la cantidad de pedidos configurados en el archivo CSV de aerolineas. Cada pedido que ingresa adquiere el semáforo (decrementando en uno el contador), una vez que finaliza el pedido se incrementa el contador nuevamente, para dar lugar al próximo hilo. Cada hilo solo puede tomar el semaforo si el contador interno es positivo.
+//!
+//! La simulación de la aerolínea puede ser exitosa o rechazar el pedido. Si este rechazado, el sistema espera N segundos para reintentarlo. La cantidad de segundos para reintentar es configurable vía la variable de entorno `RETRY_SECONDS`.
+//!
+//! El resultado final de la reserva entonces necesitará que ambos pedidos (hotel y aerolínea) hayan finalizado exitosamente. Una vez terminado, la función se encargara de agregar las estadísticas del vuelo. No se puede agregar las estadísticas ni finalizar el request si ambos threads no finalizaro, y eso se resuelve a partir de monitores. Esta herramienta nos brinda la posibilidad de esperar hasta que se cumpla una condición, y así logra la sincronización entre ambos requests.
+//!
+//! Una vez que se completa el pedido, se procede a agregar las estadísticas correspondientes. Esto incluye agregar el tiempo de procesamiento en las simulaciones, y la ruta solicitada, para luego poder reportar estas distintas estadísticas operacionales y de negocio. Estas estadisticas están detras de un lock de escritura y lectura, para evitar que haya problemas de sincronización entre distintos pedidos.
+//!
+//! ![](../../img/threads.jpg)
+//!
 //! ### Estructuras
+//!
+//! // CLAVAR ACA UN DIAGRAMA
 //!
 //! #### Flight Reservation
 //!
-//! En primer lugar, se crea una estructura que representa una reserva de vuelo. A cada vuelo ingresado por consola, se le asignará un ID para ayudarnos a identificarlo.
+//! En primer lugar, se crea una estructura que representa una reserva de cada vuelo recibido en el `POST` del server. A cada vuelo ingresado se le asigna un ID para identificarlo.
+//!
 //! Además, la estructura cuenta con la información necesaria para que el vuelo se pueda reservar con las configuraciones pedidas. Se almacenará su origen y destino, la aerolínea correspondiente a la que se le realizará el requisito y si el pedido incluye o no la reserva de hotel.
 //!
 //! ```rust
@@ -46,6 +98,7 @@
 //! #### Statistics
 //!
 //! Estructura que contiene las estadísticas de la aplicación. Por un lado, contamos con un acumulador de tiempo para poder estimar el tiempo promedio que toma una reserva desde que ingresa el pedido hasta que es finalmente aceptada. Por otro lado, un `HashMap` en donde se irán guardando todas las rutas (origen - destino) realizadas para poder llevar una estadística de las rutas más frecuentes.
+//!
 //! ```rust
 //! pub struct Statistics {
 //!    sum_time: Arc<RwLock<i64>>,
@@ -58,10 +111,15 @@
 //! #### AppState
 //!
 //! Esta última estructura se trata del estado compartido que se compartirá en cada thread que escuche nuevas solicitudes.
+//!
 //! La estructura contiene:
+//!
 //! - Las aerolíneas del tipo `Airlines`, que se trata de un mapa de todas las Aerolíneas con webservice disponibles en nuestro sistema. `Airlines` es un `HashMap` de tipo `<String, Arc<Semaphore>>`, en donde la clave es el nombre de la aerolínea. Y el valor es lo que simula ser el webservice, en este caso, un `Semaphore` que nos permitirá controlar la cantidad de solicitudes que se pueden realizar a cada webservice, teniendo en cuenta que cada aerolínea cuenta con un `rate limit`.
+//!
 //!  Este mapa se popula a partir de un archivo `src/configs/airlines.txt`, el cual indica todos los nombres de las aerolíneas junto a los N pedidos que puede responder de forma concurrente.
+//!
 //! - La estructura de estadísticas `Statistics` para poder acceder y agregar estadísticas a la aplicación.
+//!
 //! - El `logger_sender` para poder enviar mensajes al canal de logs desde cada thread. Para lograr este pasaje de mensajes al canal de logs, se usa un `Sender` que permite enviar mensajes al otro lado del canal (múltiples consumidores y un solo productor).
 //!
 //! ```rust
@@ -71,33 +129,6 @@
 //!     logger_sender: Sender<LoggerMsg>,
 //! }
 //! ```
-//!
-//! ### Implementación
-//!
-//! #### Inicialización
-//!
-//! El main esta compuesto por una serie de threads con diferentes tareas:
-//!
-//! - `logger`: El primer thread que se abre es el logger, que se encarga de escribir tanto por consola como en el archivo de logueo, los mensajes que se van a ir recibiendo. Como se explicó previamente, esto está implementado con un `mpsc::channel` con el objetivo que desde cualquier lugar de la aplicación se pueda enviar mensajes con el `Sender` y desde el thread `logger` los mensajes sean leídos por el `Receiver`.
-//! - `http-server`: Se hace uso de Actix web para recibir requests reales por consola, por lo que este thread crea la App con el estado de la aplicación `AppState` y se queda a la espera de requests para resolverlos.
-//! - `keyboard-loop`: Por último, por detrás tenemos al keyboard que se encarga de recibir dos posibles comandos: 'S'/'STATS' que nos permitirá mostrar las estadísticas de la aplicación, y 'Q'/'QUIT' que nos permitirá salir de la aplicación.
-//!
-//! #### Aplicación
-//!
-//! Una vez que ya tenemos todo el sistema inicializado, nuestro sistema ya está listo para recibir nuevos requests. Si todos los parámetros ingresados son correctos, se procede a realizar la reserva. Si no, se muestra un mensaje de error.
-//!
-//! La lógica de la aplicación se encuentra en el archivo `src/threads/alglobo.rs` . En primer lugar se abre un nuevo thread para poder ejecutar concurrentemente el request a la aerolínea por un lado y por el otro lado el request al hotel si él mismo lo requiere(en caso de que el pedido incluya el modo de paquete completo).
-//!
-//! En el caso de que la reserva sea por paquete, el pedido se envía al webservice del hotel y como sus reservas nunca se rechazan, el tiempo que tarda en procesar la respuesta simplemente se simula con un sleep de un tiempo random.
-//!
-//! De forma simultánea, se envía el pedido a la aerolínea correspondiente. El tiempo que demora en realizar el request va a depender de la cantidad de request que soporta la aerolínea concurrentemente, ya que si la misma está respondiendo la cantidad máxima de pedidos, el request de la aerolínea se va a bloquear y deberá esperar a que un pedido anterior termine. Esto está resuelto por el mismo semáforo que solo le va a permitir acceso a los pedidos si su contador interno es positivo, cada pedido que ingresa adquiere el semáforo decrementando en uno el contador, una vez que finaliza el pedido se incrementa el contador desbloqueando un hilo.
-//! Además la aerolínea puede aceptar el pedido o rechazarlo (se simula con un random booleano). Si es rechazado, el sistema espera `retry_seconds` segundos para reintentar el pedido. La cantidad de segundos para reintentar es configurable vía variable de entorno `RETRY_SECONDS`. Por último va a depender del tiempo que tarda en procesar el request que también es simulado simplemente con un sleep de tiempo random.
-//!
-//! El resultado final de la reserva entonces necesitará que ambos pedidos (hotel y aerolínea) se completen en el caso de ser paquete o únicamente el pedido a la aerolínea. Es decir que no se puede agregar las estadísticas ni finalizar el request hasta que ambos threads hayan finalizado, y eso se resuelve a partir de monitores, esta herramienta nos brinda la posibilidad de esperar hasta que se cumpla una condición, en este caso si se reserva un paquete se debe esperar que ambos pedidos sean completados y sino solamente el request a la aerolínea.
-//!
-//! Una vez que se completa el request a la aerolínea, se procede a agregar las estadísticas correspondientes, se suma el tiempo total que tardó en procesar el pedido de principio a fin y se agrega la ruta solicitada(para agregar estas estadísticas, será necesario obtener el lock para poder leer el estado actual de las estadísticas y agregar las nuevas).
-//!
-//! ![Threads](../../img/threads.jpg)
 //!
 //! ## Segunda implementación -- Actores
 //!
@@ -191,6 +222,13 @@
 //!
 //! Diagrama que refleje los threads, el flujo de comunicación entre ellos y los datos que intercambian.
 //!
+//! Una explicación del diseño y de las decisiones tomadas para la implementación de la solución.
+//!
+//!     Detalle de resolución de la lista de tareas anterior.
+//!
+//!     Diagrama que refleje los threads, el flujo de comunicación entre ellos y los datos que intercambian.
+//!
+//!     Diagramas de entidades realizados (structs y demás).
 //!
 //! Clavar un par de screenshots de htop
 //!
