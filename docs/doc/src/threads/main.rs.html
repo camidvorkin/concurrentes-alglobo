@@ -355,7 +355,7 @@
 <span class="kw">fn</span> <span class="ident">reservation</span>(<span class="ident">req</span>: <span class="ident">web::Json</span><span class="op">&lt;</span><span class="ident">FlightReservation</span><span class="op">&gt;</span>, <span class="ident">appstate</span>: <span class="ident">web::Data</span><span class="op">&lt;</span><span class="ident">AppState</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">HttpResponse</span> {
     <span class="ident">appstate</span>
         .<span class="ident">logger_sender</span>
-        .<span class="ident">send</span>((<span class="macro">format!</span>(<span class="string">&quot;GET / -- {:?}&quot;</span>, <span class="ident">req</span>), <span class="ident">LogLevel::INFO</span>))
+        .<span class="ident">send</span>((<span class="macro">format!</span>(<span class="string">&quot;POST / -- {:?}&quot;</span>, <span class="ident">req</span>), <span class="ident">LogLevel::INFO</span>))
         .<span class="ident">expect</span>(<span class="string">&quot;Logger mpsc not receving messages&quot;</span>);
 
     <span class="kw">let</span> <span class="ident">flight</span>: <span class="ident">FlightReservation</span> <span class="op">=</span> <span class="ident">req</span>.<span class="ident">to_owned</span>();
