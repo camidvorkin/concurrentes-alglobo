@@ -1,6 +1,6 @@
 //! Informe
 //! ---
-//! Este informe puede ser leido tanto en [PDF](https://camidvorkin.github.io/concurrentes-alglobo/informe.pdf) (gracias a Pandoc) como en [HTML](https://camidvorkin.github.io/concurrentes-alglobo/doc/informe/index.html) (gracias a rustdoc)
+//! Este informe puede ser leido tanto en [PDF](https://camidvorkin.github.io/concurrentes-alglobo/informe.pdf) (gracias a `pandoc`) como en [HTML](https://camidvorkin.github.io/concurrentes-alglobo/doc/informe/index.html) (gracias a `rustdoc`)
 //!
 //! Para documentación especifica del código fuente que excede a este informe se puede consultar la [documentación de la aplicación](https://camidvorkin.github.io/concurrentes-alglobo/doc/actix/index.html) (en inglés).
 //!
@@ -28,7 +28,7 @@
 //!
 //! La primera implementación del modelo es a base de hilos y de un servidor HTTP que esta constantemente escuchando nuevas reservas.
 //!
-//! Los hilos activos al estar el sistema escuchando por nuevos requests, y los hilos activos al estar procesando un solo request se pueden ver en las siguientes dos imagenes:
+//! Los hilos activos al estar el sistema escuchando por nuevos requests, y los hilos activos al estar procesando un solo request se pueden ver en las siguientes dos capturas del programa `htop`:
 //!
 //! ![](../../img/htop-threads.png)
 //!
@@ -77,7 +77,7 @@
 //!
 //! ### Estructuras
 //!
-//! // CLAVAR ACA UN DIAGRAMA
+//! CLAVAR ACA UN DIAGRAMA
 //!
 //! #### Flight Reservation
 //!
@@ -134,7 +134,13 @@
 //!
 //! *Implementar la aplicación basada en el modelo de Actores, utilizando el framework Actix.*
 //!
-//! ## Resolución
+//! La segunda implementación del programa es a base del modelo de actores. Esto implica que remodelemos el programa original (buscando reutilizar la mayor cantidad de código posible) y deleguemos a `actix` la creación de hilos del programa, olvidandonos de `thread::spawn()` y `thread::join()`.
+//!
+//! A diferencia de la primera implementación, en vez de tener un servidor HTTP, sencillamente tenemos un archivo CSV (que puede ser pasado por argumento de linea de comando, o por defecto se utiliza uno de prueba propio) que contiene una lista de los pedidos de vuelos a reservar. La idea principal del programa es crear un sistema de actores, iterar este archivo, y por cada uno levantar actores que se encargaran de la reserva
+//!
+//! En esta captura de `htop` podemos ver que al correr el programa, en un ejemplo de 10 vuelos sin hotel, y con una aerolinea que tiene como límite 3 pedidos simultaneos, se levantan 3 hilos `actix` que se encargan de la reserva. Estos hilos son especificados al haber usado un `SyncArbiter`, que nos proporciona multi-threading en el framework.
+//!
+//! ![](../../img/htop-actix.png)
 //!
 //! ### Actores
 //!
