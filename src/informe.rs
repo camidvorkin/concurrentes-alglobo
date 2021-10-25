@@ -209,6 +209,7 @@
 //! - Para la parte A, se realizan pruebas de volumen gracias a el uso de Actix web, en donde con mayor facilidad se logró enviar muchos pedidos en simultáneo para validar el funcionamiento del programa.
 //! - Se realizan pruebas automatizadas en donde se realizan varias pruebas de una vez, para validar el funcionamiento del programa, implementando nuevamente aquellos métodos que no son determinísticos.
 //!- EXPLICAR QUE TENEMOS MUCHOS TESTS PARA ACTIX EN src/test/test_flights.txt
+//!- Escribir lo de apache AB
 //!
 //! ## Post Mortem
 //!
