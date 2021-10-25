@@ -1,0 +1,10 @@
+BUE,COR,AA,false
+COR,JUJ,AA,false
+MEN,SAL,AA,true
+BUE,TUC,AA,true
+BUE,COR,AA,false
+COR,MDQ,AA,false
+STC,MEN,AA,true
+COR,MEN,AA,false
+MEN,SAL,AA,true
+MEN,SAL,AA,false

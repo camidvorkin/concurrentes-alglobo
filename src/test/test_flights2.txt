@@ -1,0 +1,5 @@
+ARG,BRA,LATAM,false
+BRA,URU,LATAM,false
+BUE,PAR,LATAM,true
+BRA,ARG,LATAM,true
+BRA,ARG,LATAM,true

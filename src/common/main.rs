@@ -9,4 +9,4 @@ pub mod utils;
 pub const AIRLINES_FILE: &str = "src/configs/airlines.txt";
 
 /// Flight CSV file to default if it wasn't specified as CLA
-pub const TEST_FLIGHTS_FILE: &str = "src/configs/test_flights.txt";
+pub const TEST_FLIGHTS_FILE: &str = "src/test/test_flights.txt";
