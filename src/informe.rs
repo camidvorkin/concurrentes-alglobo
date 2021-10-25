@@ -53,16 +53,16 @@
 //! }
 //! ```
 //!
-//! Como se puede ver en la estructura, ambas estructuras son `Arc` para que se puedan usar en varios threads. Además, se usa `RwLock` para proveer seguridad a la hora de leer y escribir en las mismas. Esto se debe a que todos los pedidos que ingresan al sistema van a estar intentando acceder a los recursos de estadísticas, es por eso que es necesario el uso de un mecanismo de sincronismo para que no haya conflictos. `RwLock` nos va a permitir tener un escritor (lock exclusivo) o varios lectores a la vez(lock compartido).
+//! Como se puede ver en la estructura, ambas campos son `Arc` para que se puedan usar en varios threads. Además, se usa `RwLock` para proveer seguridad a la hora de leer y escribir en las mismas. Esto se debe a que todos los pedidos que ingresan al sistema van a estar intentando acceder a los recursos de estadísticas, es por eso que es necesario el uso de un mecanismo de sincronismo para que no haya conflictos. `RwLock` nos va a permitir tener un escritor (lock exclusivo) o varios lectores a la vez(lock compartido).
 //!
 //! #### AppState
 //!
 //! Esta última estructura se trata del estado compartido que se compartirá en cada thread que escuche nuevas solicitudes.
 //! La estructura contiene:
 //! - Las aerolíneas del tipo `Airlines`, que se trata de un mapa de todas las Aerolíneas con webservice disponibles en nuestro sistema. `Airlines` es un `HashMap` de tipo `<String, Arc<Semaphore>>`, en donde la clave es el nombre de la aerolínea. Y el valor es lo que simula ser el webservice, en este caso, un `Semaphore` que nos permitirá controlar la cantidad de solicitudes que se pueden realizar a cada webservice, teniendo en cuenta que cada aerolínea cuenta con un `rate limit`.
-//!  Este mapa se popular a partir de un archivo `src/configs/airlines.txt`, el cual indica todos los nombres de las aerolíneas junto a los N pedidos que puede responder de forma concurrente.
+//!  Este mapa se popula a partir de un archivo `src/configs/airlines.txt`, el cual indica todos los nombres de las aerolíneas junto a los N pedidos que puede responder de forma concurrente.
 //! - La estructura de estadísticas `Statistics` para poder acceder y agregar estadísticas a la aplicación.
-//! - El `logger sender` para poder enviar mensajes al canal de logs desde cada thread. Para lograr este pasaje de mensajes al canal de logs, se usa un `Sensor` que permite enviar mensajes al otro lado del canal (múltiples consumidores y un solo productor).
+//! - El `logger_sender` para poder enviar mensajes al canal de logs desde cada thread. Para lograr este pasaje de mensajes al canal de logs, se usa un `Sender` que permite enviar mensajes al otro lado del canal (múltiples consumidores y un solo productor).
 //!
 //! ```rust
 //! struct AppState {
@@ -84,7 +84,7 @@
 //!
 //! #### Aplicación
 //!
-//! Una vez que ya tenemos todo el sistema inicializado, nuestro sistema ya está listo para recibir nuevos requisitos. Si todos los parámetros ingresados son correctos, se procede a realizar la reserva. Si no, se muestra un mensaje de error.
+//! Una vez que ya tenemos todo el sistema inicializado, nuestro sistema ya está listo para recibir nuevos requests. Si todos los parámetros ingresados son correctos, se procede a realizar la reserva. Si no, se muestra un mensaje de error.
 //!
 //! La lógica de la aplicación se encuentra en el archivo `src/threads/alglobo.rs` . En primer lugar se abre un nuevo thread para poder ejecutar concurrentemente el request a la aerolínea por un lado y por el otro lado el request al hotel si él mismo lo requiere(en caso de que el pedido incluya el modo de paquete completo).
 //!
