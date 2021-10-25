@@ -144,6 +144,8 @@
 //!
 //! ### Actores
 //!
+//! ACA VA UN DIAGRAMA DE ACTORES
+//!
 //! #### StatActor
 //!
 //! El actor `StatActor` se encarga de manejar las estadísticas de la aplicación. La estructura del actor cuenta con la acumulacion de los tiempos que toman los request, un `HashMap` con las rutas solicitadas y un `HashMap` con los IDs de los request junto con un contador para saber si finalizó su procesamiento.
@@ -206,6 +208,7 @@
 //!
 //! - Para la parte A, se realizan pruebas de volumen gracias a el uso de Actix web, en donde con mayor facilidad se logró enviar muchos pedidos en simultáneo para validar el funcionamiento del programa.
 //! - Se realizan pruebas automatizadas en donde se realizan varias pruebas de una vez, para validar el funcionamiento del programa, implementando nuevamente aquellos métodos que no son determinísticos.
+//!- EXPLICAR QUE TENEMOS MUCHOS TESTS PARA ACTIX EN src/test/test_flights.txt
 //!
 //! ## Post Mortem
 //!
