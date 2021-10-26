@@ -2,7 +2,7 @@
 extern crate actix;
 
 use crate::info_flight::InfoFlight;
-use crate::stats_actor::{FinishMessage, Stat, StatsActor};
+use crate::stats_actor::{Stat, StatsActor};
 use actix::{Actor, ActorFutureExt, Addr, Context, Handler, ResponseActFuture, WrapFuture};
 use common::logger;
 use common::logger::LogLevel;
@@ -45,14 +45,5 @@ impl Handler<InfoFlight> for Hotel {
                     });
                 }),
         )
-    }
-}
-
-impl Handler<FinishMessage> for Hotel {
-    type Result = Result<(i64, i64, f64), ()>;
-
-    /// Shutdown handler that returns the total stats
-    fn handle(&mut self, _msg: FinishMessage, _ctx: &mut Self::Context) -> Self::Result {
-        Ok((0, 0, 0.0))
     }
 }

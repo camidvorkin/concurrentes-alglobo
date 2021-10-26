@@ -22,7 +22,7 @@ use common::logger::{self, LogLevel};
 use common::{flight_reservation, AIRLINES_FILE, TEST_FLIGHTS_FILE};
 use hotel::Hotel;
 use info_flight::InfoFlight;
-use stats_actor::{FinishMessage, StatsActor};
+use stats_actor::StatsActor;
 use std::env;
 
 /// Main function of the actor system
@@ -40,17 +40,17 @@ fn main() {
         let flights = flight_reservation::from_file(&flights_file);
         logger::log(format!("{} file proccessed", flights_file), LogLevel::TRACE);
 
-        let addr_statistics = StatsActor::new().start();
+        let addr_statistics = StatsActor::new(flights.len()).start();
         logger::log("StatsActor created".to_string(), LogLevel::TRACE);
         let addr_statistics_hotel = addr_statistics.clone();
-        let addr_statistics_airline = addr_statistics.clone();
+        let addr_statistics_airline = addr_statistics;
 
         let airline_manager = airline_manager::from_file(AIRLINES_FILE, addr_statistics_airline);
         logger::log("Airlines file proccessed".to_string(), LogLevel::TRACE);
 
         let hotel_count = flights.iter().filter(|f| f.hotel).count();
         let addr_hotel = Hotel {
-            addr_statistics: addr_statistics_hotel.to_owned(),
+            addr_statistics: addr_statistics_hotel,
         }
         .start();
         logger::log(
@@ -76,9 +76,6 @@ fn main() {
             };
             let _airline_res = airline_manager.try_send(NewRequest { info_flight });
         }
-
-        let _finish = addr_statistics.send(FinishMessage).await;
-        logger::log("Shut down".to_string(), LogLevel::FINISH);
     });
 
     system.run().unwrap();

@@ -10,10 +10,11 @@ use actix::{
     Actor, ActorFutureExt, Addr, AsyncContext, Context, Handler, ResponseActFuture, WrapFuture,
 };
 use common::logger::{self, LogLevel};
+use common::utils::get_retry_seconds;
 // use common::simulate_requests::simulate_airline;
 use crate::airline_manager::FinishRequest;
 
-use rand::Rng;
+use rand::{thread_rng, Rng};
 
 pub struct Airline {
     /// Ref to the stats actor
@@ -37,8 +38,8 @@ impl Handler<InfoFlight> for Airline {
                 LogLevel::INFO,
             );
         }
-        let mut sleep_seconds = 1;
-        let retry_seconds = 2;
+        let mut sleep_seconds = thread_rng().gen_range(1, 2);
+        let retry_seconds = get_retry_seconds();
         if msg.is_retry {
             sleep_seconds += retry_seconds;
         }

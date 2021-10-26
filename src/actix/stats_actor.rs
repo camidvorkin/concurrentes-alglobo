@@ -20,16 +20,8 @@ pub struct StatsActor {
     destinations: HashMap<String, i64>,
     /// Every flight currently being run and their number of succesful requests (either to Hotel or Airline servers)
     flights: HashMap<i32, i32>,
-}
-
-impl Default for StatsActor {
-    fn default() -> Self {
-        Self {
-            sum_time: 0,
-            destinations: HashMap::new(),
-            flights: HashMap::new(),
-        }
-    }
+    /// Number of flights to be processed
+    flights_to_process: usize,
 }
 
 impl Actor for StatsActor {
@@ -37,11 +29,12 @@ impl Actor for StatsActor {
 }
 
 impl StatsActor {
-    pub fn new() -> StatsActor {
+    pub fn new(n: usize) -> StatsActor {
         StatsActor {
             sum_time: 0,
             destinations: HashMap::<String, i64>::new(),
             flights: HashMap::<i32, i32>::new(),
+            flights_to_process: n,
         }
     }
 
@@ -121,13 +114,6 @@ pub struct Stat {
     pub flight_reservation: FlightReservation,
 }
 
-/// Message to shutdown this actor
-pub struct FinishMessage;
-
-impl Message for FinishMessage {
-    type Result = Result<(i64, i64, f64), ()>;
-}
-
 impl Handler<Stat> for StatsActor {
     type Result = ();
 
@@ -160,18 +146,9 @@ impl Handler<Stat> for StatsActor {
             self.print_operational_stats();
             self.print_top_routes(3);
         }
-    }
-}
 
-impl Handler<FinishMessage> for StatsActor {
-    type Result = Result<(i64, i64, f64), ()>;
-
-    /// Shutdown handler that returns the total stats
-    fn handle(&mut self, _msg: FinishMessage, _ctx: &mut Self::Context) -> Self::Result {
-        Ok((
-            self.get_total_count(),
-            self.get_sum_time(),
-            self.get_avg_time(),
-        ))
+        if self.get_total_count() == self.flights_to_process as i64 {
+            System::current().stop();
+        }
     }
 }
