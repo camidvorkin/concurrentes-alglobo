@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["Hotel",""]]});
+initSidebarItems({"struct":[["Hotel","Hotel Actor Struct"]]});

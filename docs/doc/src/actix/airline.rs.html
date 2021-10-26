@@ -79,6 +79,9 @@
 <span id="79">79</span>
 <span id="80">80</span>
 <span id="81">81</span>
+<span id="82">82</span>
+<span id="83">83</span>
+<span id="84">84</span>
 </pre><pre class="rust">
 <span class="doccomment">//! Airline request actor</span>
 <span class="kw">extern</span> <span class="kw">crate</span> <span class="ident">actix</span>;
@@ -98,6 +101,7 @@
 
 <span class="kw">use</span> <span class="ident">rand</span>::{<span class="ident">thread_rng</span>, <span class="ident">Rng</span>};
 
+<span class="doccomment">/// Airline Actor Struct</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Airline</span> {
     <span class="doccomment">/// Ref to the stats actor</span>
     <span class="kw">pub</span> <span class="ident">addr_statistics</span>: <span class="ident">Addr</span><span class="op">&lt;</span><span class="ident">StatsActor</span><span class="op">&gt;</span>,
@@ -112,7 +116,9 @@
 
     <span class="doccomment">/// Handle the message of InfoFlight and simulates to send it to the server.</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// If the server is not available, the message is retried after N seconds</span>
+    <span class="doccomment">/// If the simulation fails, we have to send the flight again after N seconds. We do this by sending the message back to itself as a retry, and then waiting longer on the next run</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// If the simulation succeeds, we inform the AirlineManager and the StatsActor</span>
     <span class="kw">fn</span> <span class="ident">handle</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">msg</span>: <span class="ident">InfoFlight</span>, <span class="ident">_ctx</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">Self</span><span class="ident">::Context</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span><span class="ident">::Result</span> {
         <span class="kw">if</span> <span class="op">!</span><span class="ident">msg</span>.<span class="ident">is_retry</span> {
             <span class="comment">// If we are retrying a flight, the logger has already reported it</span>

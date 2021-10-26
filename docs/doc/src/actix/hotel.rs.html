@@ -49,6 +49,9 @@
 <span id="49">49</span>
 <span id="50">50</span>
 <span id="51">51</span>
+<span id="52">52</span>
+<span id="53">53</span>
+<span id="54">54</span>
 </pre><pre class="rust">
 <span class="doccomment">//! Hotel request actor</span>
 <span class="kw">extern</span> <span class="kw">crate</span> <span class="ident">actix</span>;
@@ -62,6 +65,7 @@
 <span class="kw">use</span> <span class="ident">rand</span>::{<span class="ident">thread_rng</span>, <span class="ident">Rng</span>};
 <span class="kw">use</span> <span class="ident">std::time::Duration</span>;
 
+<span class="doccomment">/// Hotel Actor Struct</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Hotel</span> {
     <span class="doccomment">/// Ref to the stats actor</span>
     <span class="kw">pub</span> <span class="ident">addr_statistics</span>: <span class="ident">Addr</span><span class="op">&lt;</span><span class="ident">StatsActor</span><span class="op">&gt;</span>,
@@ -76,7 +80,9 @@
 
     <span class="doccomment">/// Handle the message of InfoFlight and simulates to send it to the Hotel server if the request includes the whole package experience.</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// The server is always available so the request is always successful.</span>
+    <span class="doccomment">/// The server is always available so the request is always successful, it&#39;s just a random sleep.</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// After the request is done, it sends the Stat to the StatsActor</span>
     <span class="kw">fn</span> <span class="ident">handle</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">msg</span>: <span class="ident">InfoFlight</span>, <span class="ident">_ctx</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">Self</span><span class="ident">::Context</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span><span class="ident">::Result</span> {
         <span class="ident">logger::log</span>(
             <span class="macro">format!</span>(<span class="string">&quot;{} | HOTEL   | Request started&quot;</span>, <span class="ident">msg</span>.<span class="ident">flight_reservation</span>),

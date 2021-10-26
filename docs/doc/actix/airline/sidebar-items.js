@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["Airline",""]]});
+initSidebarItems({"struct":[["Airline","Airline Actor Struct"]]});

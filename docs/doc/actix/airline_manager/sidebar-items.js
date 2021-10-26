@@ -1,1 +1,1 @@
-initSidebarItems({"fn":[["from_file","Create an Airline actor for each available airline in file"]],"struct":[["AirlineManager",""],["FinishRequest",""],["NewRequest",""]]});
+initSidebarItems({"fn":[["from_file","Create an Airline actor and an AirlineManager actor"]],"struct":[["AirlineManager","AirlineManager Actor Struct"],["FinishRequest","A request that has finished"],["NewRequest","A new request to handle"]]});

@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["InfoFlight","Message made to a Actor Airline or Hotel to start the request of flight reservation to the server."]]});
+initSidebarItems({"struct":[["InfoFlight","Message sent to an AirlineManager or a Hotel to start the request of flight reservation to the server"]]});

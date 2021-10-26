@@ -103,7 +103,7 @@
 
 <span class="doccomment">/// Main function of the actor system</span>
 <span class="doccomment">///</span>
-<span class="doccomment">/// It reads the CLA flights file (or defaults to a testing purposes one), starts the actors and processes all the requests. Then, it gracefully shuts down the system</span>
+<span class="doccomment">/// It reads the CLA flights file (or defaults to a testing purposes one), starts the actors and processes all the requests.</span>
 <span class="kw">fn</span> <span class="ident">main</span>() {
     <span class="kw">let</span> <span class="ident">system</span> <span class="op">=</span> <span class="ident">System::new</span>();
     <span class="ident">system</span>.<span class="ident">block_on</span>(<span class="kw">async</span> {

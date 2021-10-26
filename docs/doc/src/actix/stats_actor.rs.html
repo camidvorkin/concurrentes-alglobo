@@ -152,12 +152,19 @@
 <span id="152">152</span>
 <span id="153">153</span>
 <span id="154">154</span>
+<span id="155">155</span>
+<span id="156">156</span>
+<span id="157">157</span>
+<span id="158">158</span>
+<span id="159">159</span>
 </pre><pre class="rust">
 <span class="doccomment">//! Actor that handles flight stats</span>
 <span class="doccomment">//!</span>
-<span class="doccomment">//! This actor can handle two different type of messages: a flight stat, and a shutdown message</span>
+<span class="doccomment">//! It&#39;s initialized with the total number of flights to be processed, to know when to shut down</span>
 <span class="doccomment">//!</span>
-<span class="doccomment">//! This shutdown message is used to shutdown the actor after every other flight in the mailbox is processed, instead of forcefully shutting it down</span>
+<span class="doccomment">//! It receives completed requests, and when a flight has all of their requests completed, it logs it as finished</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! Every N completed flights, it prints out some operational and domain-specific stats</span>
 <span class="kw">use</span> <span class="ident">actix::prelude</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">common</span>::{
     <span class="ident">flight_reservation::FlightReservation</span>,
@@ -168,14 +175,15 @@
 <span class="doccomment">/// We print the stats every N flights proccesed</span>
 <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">STATS_FREQUENCY</span>: <span class="ident">i64</span> <span class="op">=</span> <span class="number">5</span>;
 
+<span class="doccomment">/// Actor struct</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">StatsActor</span> {
     <span class="doccomment">/// Total number of seconds spent handling requests, to then calculate the average time</span>
     <span class="ident">sum_time</span>: <span class="ident">i64</span>,
     <span class="doccomment">/// Every route and the number of flights taken so that we can report the top most used</span>
     <span class="ident">destinations</span>: <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">String</span>, <span class="ident">i64</span><span class="op">&gt;</span>,
-    <span class="doccomment">/// Every flight currently being run and their number of succesful requests (either to Hotel or Airline servers)</span>
+    <span class="doccomment">/// Every flight currently being run (i.e, waiting for either a hotel or an airline request) and their number of succesful requests</span>
     <span class="ident">flights</span>: <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">i32</span>, <span class="ident">i32</span><span class="op">&gt;</span>,
-    <span class="doccomment">/// Number of flights to be processed</span>
+    <span class="doccomment">/// Number of flights to be processed in total</span>
     <span class="ident">flights_to_process</span>: <span class="ident">usize</span>,
 }
 
@@ -261,7 +269,7 @@
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Message</span>)]</span>
 <span class="attribute">#[<span class="ident">rtype</span>(<span class="ident">result</span> <span class="op">=</span> <span class="string">&quot;()&quot;</span>)]</span>
-<span class="doccomment">/// A request stat that can be either a hotel or an airline request</span>
+<span class="doccomment">/// A request stat that represents either a hotel or an airline request</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Stat</span> {
     <span class="doccomment">/// How much time has the request taken</span>
     <span class="kw">pub</span> <span class="ident">elapsed_time</span>: <span class="ident">u128</span>,
@@ -279,6 +287,8 @@
     <span class="doccomment">/// If the flight is a non hotel flight, then we finish it right away. If this is a hotel-flight, we make sure that it has two succesful requests registered before we finish it</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// If N flights have been processed, we print the stats</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// If all flights have been processed, we shut down the system</span>
     <span class="kw">fn</span> <span class="ident">handle</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">msg</span>: <span class="ident">Stat</span>, <span class="ident">_ctx</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">Self</span><span class="ident">::Context</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span><span class="ident">::Result</span> {
         <span class="kw">let</span> <span class="ident">responses_count</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">flights</span>.<span class="ident">entry</span>(<span class="ident">msg</span>.<span class="ident">flight_reservation</span>.<span class="ident">id</span>).<span class="ident">or_insert</span>(<span class="number">0</span>);
         <span class="kw-2">*</span><span class="ident">responses_count</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;

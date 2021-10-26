@@ -1,1 +1,1 @@
-initSidebarItems({"constant":[["STATS_FREQUENCY","We print the stats every N flights proccesed"]],"struct":[["Stat","A request stat that can be either a hotel or an airline request"],["StatsActor",""]]});
+initSidebarItems({"constant":[["STATS_FREQUENCY","We print the stats every N flights proccesed"]],"struct":[["Stat","A request stat that represents either a hotel or an airline request"],["StatsActor","Actor struct"]]});
