@@ -43,6 +43,6 @@ pub const SUCCESFUL_RATE: f64 = 0.8;
 pub fn toin_coss() -> Result<(), &'static str> {
     match rand::thread_rng().gen_bool(SUCCESFUL_RATE) {
         true => Ok(()),
-        false => Err("Request to airline failed"),
+        false => Err("Miles Prower"),
     }
 }

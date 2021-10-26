@@ -42,27 +42,19 @@ fn main() {
 
         let addr_statistics = StatsActor::new(flights.len()).start();
         logger::log("StatsActor created".to_string(), LogLevel::TRACE);
-        let addr_statistics_hotel = addr_statistics.clone();
-        let addr_statistics_airline = addr_statistics;
 
-        let airline_manager = airline_manager::from_file(AIRLINES_FILE, addr_statistics_airline);
+        let airline_manager = airline_manager::from_file(AIRLINES_FILE, addr_statistics.clone());
         logger::log("Airlines file proccessed".to_string(), LogLevel::TRACE);
 
         let hotel_count = flights.iter().filter(|f| f.hotel).count();
-        let addr_hotel = Hotel {
-            addr_statistics: addr_statistics_hotel,
-        }
-        .start();
+        let addr_hotel = Hotel { addr_statistics }.start();
         logger::log(
             format!("Hotel with {} count created", hotel_count),
             LogLevel::TRACE,
         );
 
         for flight_reservation in flights {
-            logger::log(
-                format!("FLIGHT {}", flight_reservation.to_string()),
-                LogLevel::INFO,
-            );
+            logger::log(format!("{} | START", flight_reservation), LogLevel::INFO);
             let start_time = std::time::Instant::now();
             let info_flight = InfoFlight {
                 flight_reservation: flight_reservation.clone(),
@@ -70,11 +62,13 @@ fn main() {
                 addr_manager: airline_manager.clone(),
                 is_retry: false,
             };
+            let _airline_res = airline_manager.try_send(NewRequest {
+                info_flight: info_flight.clone(),
+            });
             let _hotel_res = match flight_reservation.hotel {
                 true => Some(addr_hotel.try_send(info_flight.clone())),
                 false => None,
             };
-            let _airline_res = airline_manager.try_send(NewRequest { info_flight });
         }
     });
 

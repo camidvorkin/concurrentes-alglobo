@@ -15,12 +15,10 @@ impl Actor for AirlineManager {
     type Context = Context<Self>;
 }
 
+#[derive(Message)]
+#[rtype(result = "()")]
 pub struct NewRequest {
     pub info_flight: InfoFlight,
-}
-
-impl Message for NewRequest {
-    type Result = ();
 }
 
 impl Handler<NewRequest> for AirlineManager {
@@ -46,12 +44,10 @@ impl Handler<NewRequest> for AirlineManager {
     }
 }
 
+#[derive(Message)]
+#[rtype(result = "()")]
 pub struct FinishRequest {
     pub info_flight: InfoFlight,
-}
-
-impl Message for FinishRequest {
-    type Result = ();
 }
 
 impl Handler<FinishRequest> for AirlineManager {

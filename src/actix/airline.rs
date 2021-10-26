@@ -11,7 +11,7 @@ use actix::{
     Actor, ActorFutureExt, Addr, AsyncContext, Context, Handler, ResponseActFuture, WrapFuture,
 };
 use common::logger::{self, LogLevel};
-use common::utils::get_retry_seconds;
+use common::utils::{get_retry_seconds, toin_coss};
 use common::{MAX_TIME, MIN_TIME};
 
 use rand::{thread_rng, Rng};
@@ -33,6 +33,7 @@ impl Handler<InfoFlight> for Airline {
     /// If the server is not available, the message is retried after N seconds
     fn handle(&mut self, msg: InfoFlight, _ctx: &mut Self::Context) -> Self::Result {
         if !msg.is_retry {
+            // If we are retrying a flight, the logger has already reported it
             logger::log(
                 format!("{} | AIRLINE | Request started", msg.flight_reservation),
                 LogLevel::INFO,
@@ -46,38 +47,35 @@ impl Handler<InfoFlight> for Airline {
         Box::pin(
             sleep(Duration::from_secs(sleep_seconds))
                 .into_actor(self)
-                .map(
-                    move |_result, me, ctx| match rand::thread_rng().gen_bool(0.5) {
-                        false => {
-                            logger::log(
-                                format!(
-                                    "{} | AIRLINE | Request rejected ; Retrying in {} seconds",
-                                    msg.flight_reservation, retry_seconds
-                                ),
-                                LogLevel::INFO,
-                            );
+                .map(move |_result, me, ctx| match toin_coss() {
+                    Err(_) => {
+                        logger::log(
+                            format!(
+                                "{} | AIRLINE | Request rejected ; Retry in {} seconds",
+                                msg.flight_reservation, retry_seconds
+                            ),
+                            LogLevel::INFO,
+                        );
 
-                            let mut retry_flight = msg;
-                            retry_flight.is_retry = true;
-                            let _ = ctx.notify(retry_flight);
-                        }
-                        true => {
-                            logger::log(
-                                format!("{} | AIRLINE | Request accepted", msg.flight_reservation,),
-                                LogLevel::INFO,
-                            );
-                            let a = msg.clone();
-                            let _ = me.addr_statistics.try_send(Stat {
-                                elapsed_time: msg.start_time.elapsed().as_millis(),
-                                flight_reservation: msg.flight_reservation,
-                            });
+                        let mut retry_flight = msg;
+                        retry_flight.is_retry = true;
+                        let _ = ctx.notify(retry_flight);
+                    }
+                    Ok(()) => {
+                        logger::log(
+                            format!("{} | AIRLINE | Request accepted", msg.flight_reservation,),
+                            LogLevel::INFO,
+                        );
+                        let _ = me.addr_statistics.try_send(Stat {
+                            elapsed_time: msg.start_time.elapsed().as_millis(),
+                            flight_reservation: msg.clone().flight_reservation,
+                        });
 
-                            let _x = a.addr_manager.try_send(FinishRequest {
-                                info_flight: a.clone(),
-                            });
-                        }
-                    },
-                ),
+                        let _ = msg.addr_manager.try_send(FinishRequest {
+                            info_flight: msg.clone(),
+                        });
+                    }
+                }),
         )
     }
 }

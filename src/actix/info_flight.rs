@@ -18,12 +18,6 @@ pub struct InfoFlight {
     pub is_retry: bool,
 }
 
-// #[derive(Message)]
-// #[rtype(result = "()")]
-// impl Message for InfoFlight {
-//     type Result = ResponseActFuture<Self, ()>;
-// }
-
 impl Clone for InfoFlight {
     fn clone(&self) -> Self {
         InfoFlight {
