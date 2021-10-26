@@ -69,12 +69,12 @@ impl Handler<InfoFlight> for Airline {
                             format!("{} | AIRLINE | Request accepted", msg.flight_reservation,),
                             LogLevel::INFO,
                         );
-                        let _ = me.addr_statistics.try_send(Stat {
+                        me.addr_statistics.do_send(Stat {
                             elapsed_time: msg.start_time.elapsed().as_millis(),
                             flight_reservation: msg.clone().flight_reservation,
                         });
 
-                        let _ = msg.addr_manager.try_send(FinishRequest {
+                        msg.addr_manager.do_send(FinishRequest {
                             info_flight: msg.clone(),
                         });
                     }

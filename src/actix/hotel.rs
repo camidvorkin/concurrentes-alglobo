@@ -44,7 +44,7 @@ impl Handler<InfoFlight> for Hotel {
                     format!("{} | HOTEL   | Request accepted", msg.flight_reservation),
                     LogLevel::INFO,
                 );
-                let _ = me.addr_statistics.try_send(Stat {
+                me.addr_statistics.do_send(Stat {
                     elapsed_time: msg.start_time.elapsed().as_millis(),
                     flight_reservation: msg.flight_reservation,
                 });
