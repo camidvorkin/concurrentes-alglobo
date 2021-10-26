@@ -18,7 +18,6 @@
 //!   - El framework de actores utilizados es [actix](https://github.com/actix/actix)
 //!   - Su código fuente se puede encontrar en [src/actix](https://camidvorkin.github.io/concurrentes-alglobo/doc/actix/index.html)
 //!   - El programa se puede ejecutar con `cargo run --bin actix` que lee las reservas de un archivo CSV de prueba, o ejecutar con `cargo run --bin actix <archivo_de_vuelos>` para proporcionar un CSV propio. Una fila de ejemplo del CSV es `EZE,JFK,AA,true`
-//!   - Esta implementación tiene pruebas que pueden ser ejecutadas con `cargo test --bin actix`
 //!
 //! - Dentro de [src/common](https://camidvorkin.github.io/concurrentes-alglobo/doc/common/index.html) se encuentran las funciones comunes a ambas implementaciones.
 //!

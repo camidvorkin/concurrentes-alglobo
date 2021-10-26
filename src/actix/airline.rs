@@ -12,6 +12,7 @@ use actix::{
 };
 use common::logger::{self, LogLevel};
 use common::utils::get_retry_seconds;
+use common::{MAX_TIME, MIN_TIME};
 
 use rand::{thread_rng, Rng};
 
@@ -37,7 +38,7 @@ impl Handler<InfoFlight> for Airline {
                 LogLevel::INFO,
             );
         }
-        let mut sleep_seconds = thread_rng().gen_range(1, 2);
+        let mut sleep_seconds = thread_rng().gen_range(MIN_TIME, MAX_TIME);
         let retry_seconds = get_retry_seconds();
         if msg.is_retry {
             sleep_seconds += retry_seconds;

@@ -5,8 +5,9 @@ use crate::info_flight::InfoFlight;
 use crate::stats_actor::{Stat, StatsActor};
 use actix::clock::sleep;
 use actix::{Actor, ActorFutureExt, Addr, Context, Handler, ResponseActFuture, WrapFuture};
-use common::logger;
 use common::logger::LogLevel;
+use common::{logger, MAX_TIME, MIN_TIME};
+use rand::{thread_rng, Rng};
 use std::time::Duration;
 
 pub struct Hotel {
@@ -31,18 +32,20 @@ impl Handler<InfoFlight> for Hotel {
         );
 
         Box::pin(
-            sleep(Duration::from_secs(1))
-                .into_actor(self)
-                .map(move |_result, me, _ctx| {
-                    logger::log(
-                        format!("{} | HOTEL   | Request accepted", msg.flight_reservation),
-                        LogLevel::INFO,
-                    );
-                    let _ = me.addr_statistics.try_send(Stat {
-                        elapsed_time: msg.start_time.elapsed().as_millis(),
-                        flight_reservation: msg.flight_reservation,
-                    });
-                }),
+            sleep(Duration::from_secs(
+                thread_rng().gen_range(MIN_TIME, MAX_TIME),
+            ))
+            .into_actor(self)
+            .map(move |_result, me, _ctx| {
+                logger::log(
+                    format!("{} | HOTEL   | Request accepted", msg.flight_reservation),
+                    LogLevel::INFO,
+                );
+                let _ = me.addr_statistics.try_send(Stat {
+                    elapsed_time: msg.start_time.elapsed().as_millis(),
+                    flight_reservation: msg.flight_reservation,
+                });
+            }),
         )
     }
 }
