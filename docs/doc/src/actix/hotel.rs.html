@@ -99,7 +99,7 @@
                     <span class="macro">format!</span>(<span class="string">&quot;{} | HOTEL   | Request accepted&quot;</span>, <span class="ident">msg</span>.<span class="ident">flight_reservation</span>),
                     <span class="ident">LogLevel::INFO</span>,
                 );
-                <span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident">me</span>.<span class="ident">addr_statistics</span>.<span class="ident">try_send</span>(<span class="ident">Stat</span> {
+                <span class="ident">me</span>.<span class="ident">addr_statistics</span>.<span class="ident">do_send</span>(<span class="ident">Stat</span> {
                     <span class="ident">elapsed_time</span>: <span class="ident">msg</span>.<span class="ident">start_time</span>.<span class="ident">elapsed</span>().<span class="ident">as_millis</span>(),
                     <span class="ident">flight_reservation</span>: <span class="ident">msg</span>.<span class="ident">flight_reservation</span>,
                 });
