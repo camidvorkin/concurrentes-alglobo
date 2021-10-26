@@ -14,8 +14,8 @@ pub struct AirlineManager {
     pub requests_per_airline: HashMap<String, (u64, u64)>,
     // A ref to the Airline actor
     pub addr_airline: Addr<Airline>,
-    // A vector with every request to be handled
-    pub pending_requests: Vec<NewRequest>,
+    // A HashMap for mantaining the pending requests for every airline, used when the rate limit is reached
+    pub pending_requests: HashMap<String, Vec<NewRequest>>,
 }
 
 impl Actor for AirlineManager {
@@ -46,9 +46,12 @@ impl Handler<NewRequest> for AirlineManager {
                 msg.info_flight.flight_reservation.airline.clone(),
                 (rate_limit, current_amount_requests + 1),
             );
-            let _ = self.addr_airline.try_send(msg.info_flight);
+            let _ = self.addr_airline.do_send(msg.info_flight);
         } else {
-            self.pending_requests.push(msg);
+            self.pending_requests
+                .entry(msg.info_flight.flight_reservation.airline.clone())
+                .or_insert_with(Vec::new)
+                .push(msg);
         }
     }
 }
@@ -73,12 +76,16 @@ impl Handler<FinishRequest> for AirlineManager {
         let current_amount_requests = webservice.1;
 
         self.requests_per_airline.insert(
-            msg.info_flight.flight_reservation.airline,
+            msg.info_flight.flight_reservation.airline.clone(),
             (rate_limit, current_amount_requests - 1),
         );
 
-        if !self.pending_requests.is_empty() {
-            let next_request = self.pending_requests.pop().expect("No pending requests");
+        let airline_pending_requests = self
+            .pending_requests
+            .entry(msg.info_flight.flight_reservation.airline)
+            .or_insert_with(Vec::new);
+        if !airline_pending_requests.is_empty() {
+            let next_request = airline_pending_requests.pop().expect("No pending requests");
             ctx.notify(next_request);
         }
     }
@@ -100,7 +107,7 @@ pub fn from_file(filename: &str, addr_statistics: Addr<StatsActor>) -> Addr<Airl
     AirlineManager {
         requests_per_airline: airline_map,
         addr_airline,
-        pending_requests: Vec::new(),
+        pending_requests: HashMap::<String, Vec<NewRequest>>::new(),
     }
     .start()
 }

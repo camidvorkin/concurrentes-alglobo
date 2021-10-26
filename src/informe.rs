@@ -122,7 +122,7 @@
 //!
 //! - ACA EXPLICAR HOTEL Y COMO SE LOGRA LA CONCURRENCIA (box pin)
 //!
-//! - ACA EXPLICAR AIRLINE MANAGER, NEW REQUEST, FINISH REQUEST Y COMO SE LOGRA EL RATE LIMIT. Explicar que es un semaforo a manopla. Explicar que FinishRequest es un 'V' y que NewRequest es un 'P'
+//! - El actor **AirlineManager** recibe mensajes **NewRequest** y **FinishRequest**, donde ambos contienen el **InfoFlight** correspondiente. Cuando recibe un **NewRequest** y la aerolínea asociada no está procesando más de *rate limit* requests, envía el mensaje al actor **Airline** para que se procese el vuelo, y en caso contrario se la encola en un arreglo correspondiente a la aerolínea para manejar pedidos pendientes.  ACA EXPLICAR AIRLINE MANAGER, NEW REQUEST, FINISH REQUEST Y COMO SE LOGRA EL RATE LIMIT. Explicar que es un semaforo a manopla. Explicar que FinishRequest es un 'V' y que NewRequest es un 'P'
 //!
 //! - Una vez que **AirlineManager** resuelve el *rate limit*, el **InfoFlight** se envía al actor **Airline**, el cual resolvera el vuelo de la misma manera que lo hacia **Hotel** (con un `sleep` dentro de `Box::pin`). La única diferencia entre estos dos actores es que el de la areolínea puede fallar. En este caso, el actor reintentará el vuelo, envíandose a si mismo (con `actix::actor::AsyncContext::notify`) el **InfoFlight** recibido, pero marcando que es un reintento, así haciendo la espera del servidor simulado más larga (los segundos de penalización previos al reintento, y los segundos de la simulación).
 //!
