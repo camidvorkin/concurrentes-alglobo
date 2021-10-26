@@ -38,6 +38,8 @@ pub fn get_retry_seconds() -> u64 {
 pub const SUCCESFUL_RATE: f64 = 0.8;
 
 /// Throws a coin and returns a Result
+///
+/// This is a great typo. It stays
 pub fn toin_coss() -> Result<(), &'static str> {
     match rand::thread_rng().gen_bool(SUCCESFUL_RATE) {
         true => Ok(()),
