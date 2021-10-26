@@ -98,7 +98,7 @@
 //!
 //! A diferencia de la primera implementación, en vez de tener un servidor HTTP, sencillamente tenemos un archivo CSV (que puede ser pasado por argumento de linea de comando, o por defecto se utiliza uno de prueba propio) que contiene una lista de los pedidos de vuelos a reservar. La idea principal del programa es crear un sistema de actores, iterar este archivo, y por cada uno levantar actores que se encargarán de la reserva.
 //!
-//! CAMBIAME En esta captura de `htop` podemos ver que al correr el programa, en un ejemplo de 10 vuelos sin hotel, y con una aerolínea que tiene como límite 3 pedidos simultaneos, se levantan 3 hilos `actix` que se encargan de la reserva. Estos hilos son especificados al haber usado un `SyncArbiter`, que nos proporciona multi-threading en el framework.
+//! En esta captura de `htop` podemos ver que al correr el programa solo tenemos un hilo (el principal). Esto es porque ahora toda la concurrencia corre por parte de actix, y en vez de tener que sincronizar hilos entre sí, tengamos que ocuparnos de la sincronización entre actores. Levantar un actor es una operación mucho más liviana que levantar un hilo, haciendo que esta implementación sea menos intensiva en recursos que la anterior.
 //!
 //! ![](../../img/htop-actix.png)
 //!
@@ -112,7 +112,7 @@
 //!
 //! ### Actores y Mensajes
 //!
-//! ACA VA UN DIAGRAMA DE ACTORES
+//! ![](../../img/actores-actix.png)
 //!
 //! #### StatActor
 //!
