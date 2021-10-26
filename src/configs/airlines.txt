@@ -1,4 +1,4 @@
-AA,3
+AA,5
 UA,5
 DL,1
 DLVIP,100

@@ -1,8 +1,8 @@
-BUE,COR,AA,false
-COR,JUJ,AA,false
+BUE,COR,AA,true
+COR,JUJ,AA,true
 MEN,SAL,AA,true
 BUE,TUC,AA,true
-BUE,COR,AA,false
+BUE,COR,AA,true
 COR,MDQ,AA,false
 STC,MEN,AA,true
 COR,MEN,AA,false
