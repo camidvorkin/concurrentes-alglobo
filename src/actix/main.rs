@@ -44,14 +44,13 @@ fn main() {
         logger::log("StatsActor created".to_string(), LogLevel::TRACE);
 
         let airline_manager = airline_manager::from_file(AIRLINES_FILE, addr_statistics.clone());
-        logger::log("Airlines file proccessed".to_string(), LogLevel::TRACE);
-
-        let hotel_count = flights.iter().filter(|f| f.hotel).count();
-        let addr_hotel = Hotel { addr_statistics }.start();
         logger::log(
-            format!("Hotel with {} count created", hotel_count),
+            "Airlines file proccessed and AirlineManager actor created".to_string(),
             LogLevel::TRACE,
         );
+
+        let addr_hotel = Hotel { addr_statistics }.start();
+        logger::log("Hotel actor created".to_string(), LogLevel::TRACE);
 
         for flight_reservation in flights {
             logger::log(format!("{} | START", flight_reservation), LogLevel::INFO);

@@ -102,75 +102,31 @@
 //!
 //! ![](../../img/htop-actix.png)
 //!
-//! ### Funcionamiento
+//! ### Funcionamiento y reservas
 //!
 //! Lo primero que sucede en la función `main` de `src/actix/main.rs` es leer el archivo de vuelos y convertirlo en un vector de la estructura `FlightReservation`, que se reutiliza de la implementación anterior.
 //!
-//! Luego, se procesa el archivo CSV de aerolíneas, pero en vez de usar un `HashMap` de semáforos, ahora buscamos hacer un `HashMap` de actores, ya que en esta implementación cambia el modelo de concurrencia. Por lo tanto, se reimplementa el archivo `airlines.rs` y se hace que el CSV pase a... CAMBIAME
+//! Luego, se crea el actor que se encarga de manejar las estadísticas de esta implementación. Este actor es el análogo a la estructura **Statistics** anterior, pero reimplementado para el modelo actual. Esta entidad recibe en su inicialización la cantidad total de vuelos que se procesaran en el transcurso del programa, para poder apagar el sistema una vez que se haya registrado todo vuelo.
 //!
-//! Finalmente, esta función hará cada reserva solicitada, levantando un actor para cada simulación de request, y mandando los mensajes pertinentes entre todo el sistema de actores.
+//! Lo siguiente que sucede es que se procesa el archivo CSV de aerolíneas, pero en vez de usar un `HashMap` de semáforos, ahora buscamos hacer un `HashMap` de actores. Por lo tanto, creamos este `HashMap` de actores del tipo `Airline`, y este mismo se utiliza para crear un actor llamado `AirlineManager`, que será el encargado de manejar los *rate limits* de cada aerolínea. El último actor creado es el del hotel, el cual no tiene ningún tipo de *rate limit*.
+//!
+//! Finalmente, esta función hará cada reserva solicitada, iterando los vuelos y levantando un actor para cada simulación de request (el request a la aerolínea ira a `AirlineManager` mientras que el del hotel ira a `Hotel`)
 //!
 //! ### Actores y Mensajes
 //!
 //! ![](../../img/actores-actix.png)
 //!
-//! #### StatActor
+//! - La estructura **FlightReservation** ahora se encapsula dentro **InfoFlight**, que es el mensaje que reciben los actores de las aerolíneas y del hotel.
 //!
-//! El actor `StatActor` se encarga de manejar las estadísticas de la aplicación. La estructura del actor cuenta con la acumulacion de los tiempos que toman los request, un `HashMap` con las rutas solicitadas y un `HashMap` con los IDs de los request junto con un contador para saber si finalizó su procesamiento.
+//! - **InfoFlight** no es más que un vuelo y un poco de metadata acerca de este: el tiempo en el que empezó a ser procesado (para luego poder calcular el tiempo final de procesamiento) y un indicador de si este vuelo es nuevo o es simplemente un reintento de un vuelo fallido en alguno de los requests
 //!
-//! ```rust
-//! pub struct StatsActor {
-//!   sum_time: i64,
-//!   destinations: HashMap<String, i64>,
-//!   flights: HashMap<i32, i32>,
-//! }
-//! ```
+//! - ACA EXPLICAR HOTEL Y COMO SE LOGRA LA CONCURRENCIA (box pin)
 //!
-//! Este actor puede recibir un mensaje a la vez del tipo `Stat`. Al recibir este tipo de mensajes, si el request está finalizado(es decir que si se trata de un paquete, finalizó tanto el pedido del hotel como el de la aerolínea), entonces se procede a sumar el tiempo de procesamiento al contador de tiempos totales y se agrega la ruta al `HashMap` de rutas frecuentes. Además imprime por consola las estadísticas hasta el momento que incluyen la cantidad de vuelos, el tiempo total de procesamiento, el tiempo promedio de procesamiento y las 3 rutas más frecuentes.
+//! - ACA EXPLICAR AIRLINE MANAGER, NEW REQUEST, FINISH REQUEST Y COMO SE LOGRA EL RATE LIMIT. Explicar que es un semaforo a manopla
 //!
-//! Por otro lado, puede recibir un mensaje del tipo `FinishMessage` que indica que ya no quedan requests por procesar, por lo que se procede a finalizar la aplicación.
+//! - Una vez que **AirlineManager** resuelve el *rate limit*, el **InfoFlight** se envía al actor **Airline**, el cual resolvera el vuelo de la misma manera que lo hacia **Hotel** (con un `sleep` dentro de `Box::pin`). La única diferencia entre estos dos actores es que el de la areolínea puede fallar. En este caso, el actor reintentará el vuelo, envíandose a si mismo (con `actix::actor::AsyncContext::notify`) el **InfoFlight** recibido, pero marcando que es un reintento, así haciendo la espera del servidor simulado más larga (los segundos de penalización previos al reintento, y los segundos de la simulación).
 //!
-//! #### Airline
-//!
-//! El actor `Airline` simula el webservice de la aerolínea. La estructura únicamente cuenta con la referencia al `StatActor` para poder enviarle los mensajes de estadísticas una vez que termina de procesar el requisito.
-//!
-//! A diferencia de `StatActor`, este actor se implementa con un `SyncContext` y esto se debe a que este actor se ejecuta en un `SyncArbitrer` que permite ejecutar `rate_limit` actores simultáneamente. Por lo que, por cada aerolínea, se tiene un `SyncArbitrer` que permite ejecutar N `Airline` simultáneamente acorde a su `rate_limit` establecido en el archivo `src/config/airline.txt`.
-//!
-//! Este actor recibe únicamente mensajes del tipo `InfoFlight` y el actor va a simular el procesamiento del request, es decir, va a simular el tiempo que tarda en procesar el request. Este tiempo estará compuesto de la misma manera que esta explicado en la parte A del Trabajo Práctico, es decir que el tiempo va a depender de: cuantos request se pueden procesar simultáneamente, el tiempo que tarda en procesar un request(sleep con duración random) y como puede rechazar los pedidos, se esperarán `retry_seconds` segundos si se rechaza para reintentar el pedido, hasta que se acepte.
-//!
-//! Una vez que completa el request, realiza un `try_send` al `StatActor` para enviarle el mensaje de estadísticas correspondiente con el tiempo que tardo en procesar el pedido.
-//!
-//! #### Hotel
-//!
-//! El actor `Hotel` simula el webservice del hotel. Al igual que la aerolínea, la estructura únicamente cuenta con la referencia al `StatActor` para poder enviarle los mensajes de estadísticas una vez que termina de procesar el request.
-//!
-//! El Hotel también es ejecutado en un `SyncArbitrer` que permite ejecutar todos los request en simultáneo.
-//!
-//! Este actor recibe mensajes del tipo `InfoFlight` y a los mismos responde simulando el procesamiento del request, es decir, va a simular el tiempo que tarda en procesar el request. Pasado el tiempo de procesamiento (sleep de duración random), se enviará un mensaje al `StatActor` para avisarle que se completó el request y se le mandaran las estadísticas correspondientes con el tiempo que tardo en procesar el pedido.
-//!
-//! ### Mensajes
-//!
-//! #### InfoFlight
-//!
-//! Mensaje que se envía a los actores `Airline` y `Hotel` para indicar que se recibe un request de vuelo. Está compuesto por la información del vuelo y el tiempo que comenzó a procesarse el request. La respuesta esperada para este tipo de mensajes es vacía.
-//!
-//! ```rust
-//! pub struct InfoFlight {
-//!   pub flight_reservation: FlightReservation,
-//!   pub start_time: std::time::Instant,
-//! }
-//! ```
-//!
-//! #### Stat
-//!
-//! Mensaje que se envía al actor `StatsActor` para indicar que finalizó de procesarse el request de vuelo. Está compuesto por el tiempo de procesamiento de un request y `FlightReservation` para conocer la informacion del vuelo. La respuesta esperada para este tipo de mensajes es vacía.
-//!
-//! ```rust
-//! pub struct Stat {
-//!   pub elapsed_time: u128,
-//!   pub flight_reservation: FlightReservation,
-//! }
-//! ```
+//! - El último actor del programa es **StatsActor**. el cual recibe tanto de **Airline** como de **Hotel** los requests exitosos, encapsulados en el mensaje **Stat**. Al recibir un mensaje, el actor se fija si el vuelo tiene todos sus requests (uno si es solo un vuelo, o dos si es un vuelo y un hotel) en un `HashMap` interno, y si es así, registra en el `logger` al vuelo como finalizado. A diferencia de la implementación anterior, la manera de tener estadísticas periódicas es que cada N vuelos se impriman automáticamente (en vez de escuchar al teclado en un hilo aparte). Finalmente, si la cantidad total de vuelos procesados es igual a la cantidad recibida en la inizialicaion, el programa se dara por concluido y se apaga.
 //!
 //!
 fn main() {}
