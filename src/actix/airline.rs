@@ -16,6 +16,7 @@ use common::{MAX_TIME, MIN_TIME};
 
 use rand::{thread_rng, Rng};
 
+/// Airline Actor Struct
 pub struct Airline {
     /// Ref to the stats actor
     pub addr_statistics: Addr<StatsActor>,
@@ -30,7 +31,9 @@ impl Handler<InfoFlight> for Airline {
 
     /// Handle the message of InfoFlight and simulates to send it to the server.
     ///
-    /// If the server is not available, the message is retried after N seconds
+    /// If the simulation fails, we have to send the flight again after N seconds. We do this by sending the message back to itself as a retry, and then waiting longer on the next run
+    ///
+    /// If the simulation succeeds, we inform the AirlineManager and the StatsActor
     fn handle(&mut self, msg: InfoFlight, _ctx: &mut Self::Context) -> Self::Result {
         if !msg.is_retry {
             // If we are retrying a flight, the logger has already reported it

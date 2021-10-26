@@ -12,6 +12,7 @@ use std::thread;
 use std::time::Duration;
 use std_semaphore::Semaphore;
 
+/// Function that simulates a request by sleeping a random number of seconds
 fn simulate_request() {
     thread::sleep(Duration::from_secs(
         thread_rng().gen_range(MIN_TIME, MAX_TIME),

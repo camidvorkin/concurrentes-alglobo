@@ -10,6 +10,7 @@ use common::{logger, MAX_TIME, MIN_TIME};
 use rand::{thread_rng, Rng};
 use std::time::Duration;
 
+/// Hotel Actor Struct
 pub struct Hotel {
     /// Ref to the stats actor
     pub addr_statistics: Addr<StatsActor>,
@@ -24,7 +25,9 @@ impl Handler<InfoFlight> for Hotel {
 
     /// Handle the message of InfoFlight and simulates to send it to the Hotel server if the request includes the whole package experience.
     ///
-    /// The server is always available so the request is always successful.
+    /// The server is always available so the request is always successful, it's just a random sleep.
+    ///
+    /// After the request is done, it sends the Stat to the StatsActor
     fn handle(&mut self, msg: InfoFlight, _ctx: &mut Self::Context) -> Self::Result {
         logger::log(
             format!("{} | HOTEL   | Request started", msg.flight_reservation),

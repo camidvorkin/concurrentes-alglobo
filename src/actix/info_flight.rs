@@ -4,9 +4,7 @@ use actix::Addr;
 use actix::Message;
 use common::flight_reservation::FlightReservation;
 
-/// Message made to a Actor Airline or Hotel to start the request of flight reservation to the server.
-///
-/// The message contains the address of the StatsActor for statistics purpuses and the information of the flight reservation.
+/// Message sent to an AirlineManager or a Hotel to start the request of flight reservation to the server
 #[derive(Message)]
 #[rtype(result = "()")]
 pub struct InfoFlight {
@@ -14,7 +12,9 @@ pub struct InfoFlight {
     pub flight_reservation: FlightReservation,
     /// When the flight started to being processed by the program
     pub start_time: std::time::Instant,
+    /// A reference to the airline manager, to send a FinishRequest message
     pub addr_manager: Addr<AirlineManager>,
+    /// Indicates if the flight is a new one, or is being retried
     pub is_retry: bool,
 }
 

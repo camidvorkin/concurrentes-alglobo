@@ -27,7 +27,7 @@ use std::env;
 
 /// Main function of the actor system
 ///
-/// It reads the CLA flights file (or defaults to a testing purposes one), starts the actors and processes all the requests. Then, it gracefully shuts down the system
+/// It reads the CLA flights file (or defaults to a testing purposes one), starts the actors and processes all the requests.
 fn main() {
     let system = System::new();
     system.block_on(async {
