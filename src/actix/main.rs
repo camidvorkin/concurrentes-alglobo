@@ -11,20 +11,19 @@
 //! The airlines in the flights file must be configured in the airlines file, under the configs dir. This CSV has the airline name and the number of simultaneous flights they can handle
 //!
 //! Every N flights processed, the program will print the current stats of the system. This variable can be configured under the stats actor file
-mod hotel;
 mod airline;
 mod airline_manager;
+mod hotel;
 mod info_flight;
 mod stats_actor;
 use actix::prelude::*;
+use airline_manager::NewRequest;
 use common::logger::{self, LogLevel};
 use common::{flight_reservation, AIRLINES_FILE, TEST_FLIGHTS_FILE};
 use hotel::Hotel;
 use info_flight::InfoFlight;
 use stats_actor::{FinishMessage, StatsActor};
-use airline_manager::NewRequest;
 use std::env;
-
 
 /// Main function of the actor system
 ///
@@ -52,15 +51,16 @@ fn main() {
         let hotel_count = flights.iter().filter(|f| f.hotel).count();
         let addr_hotel = Hotel {
             addr_statistics: addr_statistics_hotel.to_owned(),
-        }.start();
+        }
+        .start();
         logger::log(
             format!("Hotel with {} count created", hotel_count),
             LogLevel::TRACE,
         );
-       
+
         for flight_reservation in flights {
             logger::log(
-                format!("FLIGHT {}", flight_reservation.to_string() ),
+                format!("FLIGHT {}", flight_reservation.to_string()),
                 LogLevel::INFO,
             );
             let start_time = std::time::Instant::now();
@@ -74,11 +74,8 @@ fn main() {
                 true => Some(addr_hotel.try_send(info_flight.clone())),
                 false => None,
             };
-            let _airline_res = airline_manager.try_send(NewRequest {
-                info_flight: info_flight,                
-            });
+            let _airline_res = airline_manager.try_send(NewRequest { info_flight });
         }
-
 
         let _finish = addr_statistics.send(FinishMessage).await;
         logger::log("Shut down".to_string(), LogLevel::FINISH);

@@ -1,7 +1,6 @@
 //! Airline request actor
 extern crate actix;
 
-use std::thread;
 use std::time::Duration;
 
 use crate::info_flight::InfoFlight;
@@ -13,8 +12,8 @@ use actix::{
 use common::logger::{self, LogLevel};
 // use common::simulate_requests::simulate_airline;
 use crate::airline_manager::FinishRequest;
-use common::utils::get_retry_seconds;
-use rand::{thread_rng, Rng};
+
+use rand::Rng;
 
 pub struct Airline {
     /// Ref to the stats actor
@@ -57,7 +56,7 @@ impl Handler<InfoFlight> for Airline {
                                 LogLevel::INFO,
                             );
 
-                            let mut retry_flight = msg.clone();
+                            let mut retry_flight = msg;
                             retry_flight.is_retry = true;
                             let _ = ctx.notify(retry_flight);
                         }
@@ -72,7 +71,7 @@ impl Handler<InfoFlight> for Airline {
                                 flight_reservation: msg.flight_reservation,
                             });
 
-                            let __ = a.addr_manager.try_send(FinishRequest {
+                            let _x = a.addr_manager.try_send(FinishRequest {
                                 info_flight: a.clone(),
                             });
                         }
