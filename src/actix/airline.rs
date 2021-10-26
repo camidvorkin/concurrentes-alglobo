@@ -11,7 +11,7 @@ use crate::stats_actor::{Stat, StatsActor};
 use common::logger::{self, LogLevel};
 // use common::simulate_requests::simulate_airline;
 use common::utils::get_retry_seconds;
-use rand::Rng;
+use rand::{Rng, thread_rng};
 use crate::airline_manager::FinishRequest;
 
 pub struct Airline {
