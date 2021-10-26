@@ -46,7 +46,7 @@ impl Handler<NewRequest> for AirlineManager {
                 msg.info_flight.flight_reservation.airline.clone(),
                 (rate_limit, current_amount_requests + 1),
             );
-            let _ = self.addr_airline.do_send(msg.info_flight);
+            self.addr_airline.do_send(msg.info_flight);
         } else {
             self.pending_requests
                 .entry(msg.info_flight.flight_reservation.airline.clone())

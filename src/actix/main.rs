@@ -61,13 +61,12 @@ fn main() {
                 addr_manager: airline_manager.clone(),
                 is_retry: false,
             };
-            let _airline_res = airline_manager.do_send(NewRequest {
+            airline_manager.do_send(NewRequest {
                 info_flight: info_flight.clone(),
             });
-            let _hotel_res = match flight_reservation.hotel {
-                true => Some(addr_hotel.do_send(info_flight.clone())),
-                false => None,
-            };
+            if flight_reservation.hotel {
+                addr_hotel.do_send(info_flight);
+            }
         }
     });
 
