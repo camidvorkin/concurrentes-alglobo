@@ -68,6 +68,7 @@ fn main() {
                 flight_reservation: flight_reservation.clone(),
                 start_time,
                 addr_manager: airline_manager.clone(),
+                is_retry: false,
             };
             let _hotel_res = match flight_reservation.hotel {
                 true => Some(addr_hotel.try_send(info_flight.clone())),
