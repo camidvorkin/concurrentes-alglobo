@@ -2,7 +2,7 @@ use crate::alglobo::reserve;
 use crate::statistics::Statistics;
 use common::flight_reservation::FlightReservation;
 use common::logger::LoggerMsg;
-use common::simulate_requests::MIN_TIME;
+use common::MIN_TIME;
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::sync::Arc;
 use std::thread;
@@ -58,8 +58,8 @@ fn test_simple_reservation_no_hotel() {
         test1.logger_sender,
     );
     assert_eq!(test1.statistics.get_total_count(), 1);
-    assert!(test1.statistics.get_avg_time() >= (MIN_TIME) as f64);
-    assert!(test1.statistics.get_sum_time() >= (MIN_TIME) as i64);
+    assert!(test1.statistics.get_avg_time() >= (MIN_TIME * 1000) as f64);
+    assert!(test1.statistics.get_sum_time() >= (MIN_TIME * 1000) as i64);
 }
 
 #[test]
@@ -82,8 +82,8 @@ fn test_two_not_simultaneous_request() {
         thread.join().expect("Unable to join");
     }
     assert_eq!(test2.statistics.get_total_count(), 2);
-    assert!(test2.statistics.get_avg_time() >= 1.5 * (MIN_TIME) as f64);
-    assert!(test2.statistics.get_sum_time() >= 2 * (MIN_TIME) as i64);
+    assert!(test2.statistics.get_avg_time() >= 1.5 * (MIN_TIME * 1000) as f64);
+    assert!(test2.statistics.get_sum_time() >= 2 * (MIN_TIME * 1000) as i64);
 }
 
 #[test]
@@ -106,8 +106,8 @@ fn test_two_simultaneous_requests() {
         thread.join().expect("Unable to join");
     }
     assert_eq!(test3.statistics.get_total_count(), 2);
-    assert!(test3.statistics.get_avg_time() >= (MIN_TIME) as f64);
-    assert!(test3.statistics.get_sum_time() >= 2 * (MIN_TIME) as i64);
+    assert!(test3.statistics.get_avg_time() >= (MIN_TIME * 1000) as f64);
+    assert!(test3.statistics.get_sum_time() >= 2 * (MIN_TIME * 1000) as i64);
 }
 
 #[test]
@@ -125,8 +125,8 @@ fn test_one_request_with_holding_hotel() {
         test4.logger_sender,
     );
     assert_eq!(test4.statistics.get_total_count(), 1);
-    assert!(test4.statistics.get_avg_time() >= (MIN_TIME) as f64);
-    assert!(test4.statistics.get_sum_time() >= (MIN_TIME) as i64);
+    assert!(test4.statistics.get_avg_time() >= (MIN_TIME * 1000) as f64);
+    assert!(test4.statistics.get_sum_time() >= (MIN_TIME * 1000) as i64);
 }
 
 #[test]
@@ -149,8 +149,8 @@ fn test_two_request_with_one_holding_hotel() {
         thread.join().expect("Unable to join");
     }
     assert_eq!(test5.statistics.get_total_count(), 2);
-    assert!(test5.statistics.get_avg_time() >= 1.5 * (MIN_TIME) as f64);
-    assert!(test5.statistics.get_sum_time() >= 2 * (MIN_TIME) as i64);
+    assert!(test5.statistics.get_avg_time() >= 1.5 * (MIN_TIME * 1000) as f64);
+    assert!(test5.statistics.get_sum_time() >= 2 * (MIN_TIME * 1000) as i64);
 }
 
 #[test]
@@ -183,6 +183,6 @@ fn test_volume() {
         thread.join().expect("Unable to join");
     }
     assert_eq!(test.statistics.get_total_count(), n_flights);
-    assert!(test.statistics.get_avg_time() >= avg * (MIN_TIME) as f64);
-    assert!(test.statistics.get_sum_time() >= n_flights * (MIN_TIME) as i64);
+    assert!(test.statistics.get_avg_time() >= avg * (MIN_TIME * 1000) as f64);
+    assert!(test.statistics.get_sum_time() >= n_flights * (MIN_TIME * 1000) as i64);
 }

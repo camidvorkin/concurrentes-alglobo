@@ -2,14 +2,21 @@
 use crate::statistics::Statistics;
 use common::flight_reservation::FlightReservation;
 use common::logger::{LogLevel, LoggerMsg};
-use common::simulate_requests::{simulate_airline, simulate_hotel};
-use common::utils::get_retry_seconds;
+use common::utils::{get_retry_seconds, toin_coss};
+use common::{MAX_TIME, MIN_TIME};
+use rand::{thread_rng, Rng};
 
 use std::sync::mpsc::Sender;
 use std::sync::{Arc, Condvar, Mutex};
 use std::thread;
 use std::time::Duration;
 use std_semaphore::Semaphore;
+
+fn simulate_request() {
+    thread::sleep(Duration::from_secs(
+        thread_rng().gen_range(MIN_TIME, MAX_TIME),
+    ));
+}
 
 /// Function that makes the request to the hotel
 fn send_to_hotel(
@@ -24,7 +31,8 @@ fn send_to_hotel(
         ))
         .expect("Logger mpsc not receving messages");
 
-    simulate_hotel();
+    simulate_request();
+
     logger_sender
         .send((
             format!("{} | HOTEL   | Request accepted", flight_info),
@@ -57,7 +65,11 @@ fn send_to_airline(
 
     let retry_seconds = get_retry_seconds();
 
-    while simulate_airline().is_err() {
+    simulate_request();
+
+    while toin_coss().is_err() {
+        simulate_request();
+
         logger_sender
             .send((
                 format!(

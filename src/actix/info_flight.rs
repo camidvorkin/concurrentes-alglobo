@@ -1,4 +1,6 @@
 //! Flight information message to be sent accross Hotel and Airline actors
+use crate::airline_manager::AirlineManager;
+use actix::Addr;
 use actix::Message;
 use common::flight_reservation::FlightReservation;
 
@@ -12,6 +14,8 @@ pub struct InfoFlight {
     pub flight_reservation: FlightReservation,
     /// When the flight started to being processed by the program
     pub start_time: std::time::Instant,
+    pub addr_manager: Addr<AirlineManager>,
+    pub is_retry: bool,
 }
 
 impl Clone for InfoFlight {
@@ -19,6 +23,8 @@ impl Clone for InfoFlight {
         InfoFlight {
             flight_reservation: self.flight_reservation.clone(),
             start_time: self.start_time,
+            addr_manager: self.addr_manager.clone(),
+            is_retry: self.is_retry,
         }
     }
 }
