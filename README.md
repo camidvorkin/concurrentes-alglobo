@@ -2,9 +2,9 @@
 
 Modelado de reservas de vuelos de manera concurrente.
 
-Toda la documentación que estas buscando se encuentra en nuestro [rustdoc](https://camidvorkin.github.io/concurrentes-alglobo)
+Toda la documentación se encuentra en nuestro [rustdoc](https://camidvorkin.github.io/concurrentes-alglobo)
 
-Si no tenes ganas de leer el informe dentro de rustdoc, lo podes encontrar en un [PDF lindo](https://camidvorkin.github.io/concurrentes-alglobo/informe.pdf)
+El informe se puede leer en [PDF](https://camidvorkin.github.io/concurrentes-alglobo/informe.pdf) o en el rustdoc mismo
 
 ## Un par de comandos
 
