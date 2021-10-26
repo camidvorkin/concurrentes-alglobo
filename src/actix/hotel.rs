@@ -3,11 +3,10 @@ extern crate actix;
 
 use crate::info_flight::InfoFlight;
 use crate::stats_actor::{Stat, StatsActor};
+use actix::clock::sleep;
 use actix::{Actor, ActorFutureExt, Addr, Context, Handler, ResponseActFuture, WrapFuture};
 use common::logger;
 use common::logger::LogLevel;
-// use common::simulate_requests::simulate_hotel;
-use actix::clock::sleep;
 use std::time::Duration;
 
 pub struct Hotel {

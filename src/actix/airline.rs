@@ -3,6 +3,7 @@ extern crate actix;
 
 use std::time::Duration;
 
+use crate::airline_manager::FinishRequest;
 use crate::info_flight::InfoFlight;
 use crate::stats_actor::{Stat, StatsActor};
 use actix::clock::sleep;
@@ -11,8 +12,6 @@ use actix::{
 };
 use common::logger::{self, LogLevel};
 use common::utils::get_retry_seconds;
-// use common::simulate_requests::simulate_airline;
-use crate::airline_manager::FinishRequest;
 
 use rand::{thread_rng, Rng};
 
