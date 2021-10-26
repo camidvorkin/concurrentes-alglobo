@@ -8,6 +8,7 @@ use std::collections::HashMap;
 pub struct AirlineManager {
     pub requests_per_airline: HashMap<String, (u64, u64)>,
     pub addr_airline: Addr<Airline>,
+    pub pending_requests: Vec<NewRequest>,
 }
 
 impl Actor for AirlineManager {
@@ -25,7 +26,7 @@ impl Message for NewRequest {
 impl Handler<NewRequest> for AirlineManager {
     type Result = ();
 
-    fn handle(&mut self, msg: NewRequest, ctx: &mut Self::Context) -> Self::Result {
+    fn handle(&mut self, msg: NewRequest, _ctx: &mut Self::Context) -> Self::Result {
         let webservice = self
             .requests_per_airline
             .entry(msg.info_flight.flight_reservation.airline.clone())
@@ -40,9 +41,7 @@ impl Handler<NewRequest> for AirlineManager {
             );
             let _ = self.addr_airline.try_send(msg.info_flight);
         } else {
-            ctx.run_later(std::time::Duration::from_millis(1), move |act, _ctx| {
-                act.handle(msg, _ctx);
-            });
+            self.pending_requests.push(msg);
         }
     }
 }
@@ -58,17 +57,23 @@ impl Message for FinishRequest {
 impl Handler<FinishRequest> for AirlineManager {
     type Result = ();
 
-    fn handle(&mut self, msg: FinishRequest, _ctx: &mut Self::Context) -> Self::Result {
+    fn handle(&mut self, msg: FinishRequest, ctx: &mut Self::Context) -> Self::Result {
         let webservice = self
             .requests_per_airline
             .entry(msg.info_flight.flight_reservation.airline.clone())
             .or_insert((0, 0));
         let rate_limit = webservice.0;
         let current_amount_requests = webservice.1;
+
         self.requests_per_airline.insert(
             msg.info_flight.flight_reservation.airline,
             (rate_limit, current_amount_requests - 1),
         );
+
+        if !self.pending_requests.is_empty() {
+            let next_request = self.pending_requests.pop().expect("No pending requests");
+            ctx.notify(next_request);
+        }
     }
 }
 
@@ -88,6 +93,7 @@ pub fn from_file(filename: &str, addr_statistics: Addr<StatsActor>) -> Addr<Airl
     AirlineManager {
         requests_per_airline: airline_map,
         addr_airline,
+        pending_requests: Vec::new(),
     }
     .start()
 }
