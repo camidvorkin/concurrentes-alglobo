@@ -108,7 +108,7 @@
 //!
 //! Luego, se crea el actor que se encarga de manejar las estadísticas de esta implementación. Este actor es el análogo a la estructura **Statistics** anterior, pero reimplementado para el modelo actual. Esta entidad recibe en su inicialización la cantidad total de vuelos que se procesaran en el transcurso del programa, para poder apagar el sistema una vez que se haya registrado todo vuelo.
 //!
-//! Lo siguiente que sucede es que se procesa el archivo CSV de aerolíneas, pero en vez de usar un `HashMap` de semáforos, ahora buscamos hacer un `HashMap` de actores. Por lo tanto, creamos este `HashMap` de actores del tipo `Airline`, y este mismo se utiliza para crear un actor llamado `AirlineManager`, que será el encargado de manejar los *rate limits* de cada aerolínea. El último actor creado es el del hotel, el cual no tiene ningún tipo de *rate limit*.
+//! Lo siguiente que sucede es que se procesa el archivo CSV de aerolíneas, pero en vez de usar un `HashMap` de semáforos, ahora buscamos hacer un `HashMap` donde cada aerolinea tenga una tupla. En esta tupla tenemos dos valores, el rate limit, y la cantidad de vuelos actualmente siendo procesados (incialmente 0). Con este diccionario, el actor `AirlineManager` se encargará de nunca enviar requests por sobre el *rate limit* al actor `Airline`, que es el actor único utilizado para todas las aerolíneas. El último actor creado es el del hotel, el cual no tiene ningún tipo de *rate limit*.
 //!
 //! Finalmente, esta función hará cada reserva solicitada, iterando los vuelos y levantando un actor para cada simulación de request (el request a la aerolínea ira a `AirlineManager` mientras que el del hotel ira a `Hotel`)
 //!
