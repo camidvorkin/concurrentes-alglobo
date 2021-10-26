@@ -62,7 +62,7 @@ impl Handler<InfoFlight> for Airline {
 
                         let mut retry_flight = msg;
                         retry_flight.is_retry = true;
-                        let _ = ctx.notify(retry_flight);
+                        ctx.notify(retry_flight);
                     }
                     Ok(()) => {
                         logger::log(
