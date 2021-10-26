@@ -152,29 +152,6 @@
 <span id="152">152</span>
 <span id="153">153</span>
 <span id="154">154</span>
-<span id="155">155</span>
-<span id="156">156</span>
-<span id="157">157</span>
-<span id="158">158</span>
-<span id="159">159</span>
-<span id="160">160</span>
-<span id="161">161</span>
-<span id="162">162</span>
-<span id="163">163</span>
-<span id="164">164</span>
-<span id="165">165</span>
-<span id="166">166</span>
-<span id="167">167</span>
-<span id="168">168</span>
-<span id="169">169</span>
-<span id="170">170</span>
-<span id="171">171</span>
-<span id="172">172</span>
-<span id="173">173</span>
-<span id="174">174</span>
-<span id="175">175</span>
-<span id="176">176</span>
-<span id="177">177</span>
 </pre><pre class="rust">
 <span class="doccomment">//! Actor that handles flight stats</span>
 <span class="doccomment">//!</span>
@@ -198,16 +175,8 @@
     <span class="ident">destinations</span>: <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">String</span>, <span class="ident">i64</span><span class="op">&gt;</span>,
     <span class="doccomment">/// Every flight currently being run and their number of succesful requests (either to Hotel or Airline servers)</span>
     <span class="ident">flights</span>: <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">i32</span>, <span class="ident">i32</span><span class="op">&gt;</span>,
-}
-
-<span class="kw">impl</span> <span class="ident">Default</span> <span class="kw">for</span> <span class="ident">StatsActor</span> {
-    <span class="kw">fn</span> <span class="ident">default</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
-        <span class="self">Self</span> {
-            <span class="ident">sum_time</span>: <span class="number">0</span>,
-            <span class="ident">destinations</span>: <span class="ident">HashMap::new</span>(),
-            <span class="ident">flights</span>: <span class="ident">HashMap::new</span>(),
-        }
-    }
+    <span class="doccomment">/// Number of flights to be processed</span>
+    <span class="ident">flights_to_process</span>: <span class="ident">usize</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">Actor</span> <span class="kw">for</span> <span class="ident">StatsActor</span> {
@@ -215,11 +184,12 @@
 }
 
 <span class="kw">impl</span> <span class="ident">StatsActor</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">StatsActor</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">n</span>: <span class="ident">usize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">StatsActor</span> {
         <span class="ident">StatsActor</span> {
             <span class="ident">sum_time</span>: <span class="number">0</span>,
             <span class="ident">destinations</span>: <span class="ident">HashMap</span>::<span class="op">&lt;</span><span class="ident">String</span>, <span class="ident">i64</span><span class="op">&gt;</span><span class="ident">::new</span>(),
             <span class="ident">flights</span>: <span class="ident">HashMap</span>::<span class="op">&lt;</span><span class="ident">i32</span>, <span class="ident">i32</span><span class="op">&gt;</span><span class="ident">::new</span>(),
+            <span class="ident">flights_to_process</span>: <span class="ident">n</span>,
         }
     }
 
@@ -299,13 +269,6 @@
     <span class="kw">pub</span> <span class="ident">flight_reservation</span>: <span class="ident">FlightReservation</span>,
 }
 
-<span class="doccomment">/// Message to shutdown this actor</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">FinishMessage</span>;
-
-<span class="kw">impl</span> <span class="ident">Message</span> <span class="kw">for</span> <span class="ident">FinishMessage</span> {
-    <span class="kw">type</span> <span class="prelude-ty">Result</span> <span class="op">=</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">i64</span>, <span class="ident">i64</span>, <span class="ident">f64</span>), ()<span class="op">&gt;</span>;
-}
-
 <span class="kw">impl</span> <span class="ident">Handler</span><span class="op">&lt;</span><span class="ident">Stat</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">StatsActor</span> {
     <span class="kw">type</span> <span class="prelude-ty">Result</span> <span class="op">=</span> ();
 
@@ -338,19 +301,10 @@
             <span class="self">self</span>.<span class="ident">print_operational_stats</span>();
             <span class="self">self</span>.<span class="ident">print_top_routes</span>(<span class="number">3</span>);
         }
-    }
-}
 
-<span class="kw">impl</span> <span class="ident">Handler</span><span class="op">&lt;</span><span class="ident">FinishMessage</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">StatsActor</span> {
-    <span class="kw">type</span> <span class="prelude-ty">Result</span> <span class="op">=</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">i64</span>, <span class="ident">i64</span>, <span class="ident">f64</span>), ()<span class="op">&gt;</span>;
-
-    <span class="doccomment">/// Shutdown handler that returns the total stats</span>
-    <span class="kw">fn</span> <span class="ident">handle</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">_msg</span>: <span class="ident">FinishMessage</span>, <span class="ident">_ctx</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">Self</span><span class="ident">::Context</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span><span class="ident">::Result</span> {
-        <span class="prelude-val">Ok</span>((
-            <span class="self">self</span>.<span class="ident">get_total_count</span>(),
-            <span class="self">self</span>.<span class="ident">get_sum_time</span>(),
-            <span class="self">self</span>.<span class="ident">get_avg_time</span>(),
-        ))
+        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">get_total_count</span>() <span class="op">=</span><span class="op">=</span> <span class="self">self</span>.<span class="ident">flights_to_process</span> <span class="kw">as</span> <span class="ident">i64</span> {
+            <span class="ident">System::current</span>().<span class="ident">stop</span>();
+        }
     }
 }
 </pre></div>

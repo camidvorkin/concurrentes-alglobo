@@ -1,1 +1,1 @@
-initSidebarItems({"fn":[["from_file","Create an Airline actor for each available airline in file"]],"struct":[["Airline",""]]});
+initSidebarItems({"struct":[["Airline",""]]});

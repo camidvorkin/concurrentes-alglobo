@@ -151,19 +151,38 @@
 <span id="151">151</span>
 <span id="152">152</span>
 <span id="153">153</span>
+<span id="154">154</span>
+<span id="155">155</span>
+<span id="156">156</span>
+<span id="157">157</span>
+<span id="158">158</span>
+<span id="159">159</span>
+<span id="160">160</span>
+<span id="161">161</span>
+<span id="162">162</span>
+<span id="163">163</span>
+<span id="164">164</span>
+<span id="165">165</span>
 </pre><pre class="rust">
 <span class="doccomment">//! Make the reservations</span>
 <span class="kw">use</span> <span class="kw">crate</span><span class="ident">::statistics::Statistics</span>;
 <span class="kw">use</span> <span class="ident">common::flight_reservation::FlightReservation</span>;
 <span class="kw">use</span> <span class="ident">common::logger</span>::{<span class="ident">LogLevel</span>, <span class="ident">LoggerMsg</span>};
-<span class="kw">use</span> <span class="ident">common::simulate_requests</span>::{<span class="ident">simulate_airline</span>, <span class="ident">simulate_hotel</span>};
-<span class="kw">use</span> <span class="ident">common::utils::get_retry_seconds</span>;
+<span class="kw">use</span> <span class="ident">common::utils</span>::{<span class="ident">get_retry_seconds</span>, <span class="ident">toin_coss</span>};
+<span class="kw">use</span> <span class="ident">common</span>::{<span class="ident">MAX_TIME</span>, <span class="ident">MIN_TIME</span>};
+<span class="kw">use</span> <span class="ident">rand</span>::{<span class="ident">thread_rng</span>, <span class="ident">Rng</span>};
 
 <span class="kw">use</span> <span class="ident">std::sync::mpsc::Sender</span>;
 <span class="kw">use</span> <span class="ident">std::sync</span>::{<span class="ident">Arc</span>, <span class="ident">Condvar</span>, <span class="ident">Mutex</span>};
 <span class="kw">use</span> <span class="ident">std::thread</span>;
 <span class="kw">use</span> <span class="ident">std::time::Duration</span>;
 <span class="kw">use</span> <span class="ident">std_semaphore::Semaphore</span>;
+
+<span class="kw">fn</span> <span class="ident">simulate_request</span>() {
+    <span class="ident">thread::sleep</span>(<span class="ident">Duration::from_secs</span>(
+        <span class="ident">thread_rng</span>().<span class="ident">gen_range</span>(<span class="ident">MIN_TIME</span>, <span class="ident">MAX_TIME</span>),
+    ));
+}
 
 <span class="doccomment">/// Function that makes the request to the hotel</span>
 <span class="kw">fn</span> <span class="ident">send_to_hotel</span>(
@@ -178,7 +197,8 @@
         ))
         .<span class="ident">expect</span>(<span class="string">&quot;Logger mpsc not receving messages&quot;</span>);
 
-    <span class="ident">simulate_hotel</span>();
+    <span class="ident">simulate_request</span>();
+
     <span class="ident">logger_sender</span>
         .<span class="ident">send</span>((
             <span class="macro">format!</span>(<span class="string">&quot;{} | HOTEL   | Request accepted&quot;</span>, <span class="ident">flight_info</span>),
@@ -211,7 +231,11 @@
 
     <span class="kw">let</span> <span class="ident">retry_seconds</span> <span class="op">=</span> <span class="ident">get_retry_seconds</span>();
 
-    <span class="kw">while</span> <span class="ident">simulate_airline</span>().<span class="ident">is_err</span>() {
+    <span class="ident">simulate_request</span>();
+
+    <span class="kw">while</span> <span class="ident">toin_coss</span>().<span class="ident">is_err</span>() {
+        <span class="ident">simulate_request</span>();
+
         <span class="ident">logger_sender</span>
             .<span class="ident">send</span>((
                 <span class="macro">format!</span>(

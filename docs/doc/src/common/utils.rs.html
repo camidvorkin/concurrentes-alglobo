@@ -31,12 +31,29 @@
 <span id="31">31</span>
 <span id="32">32</span>
 <span id="33">33</span>
+<span id="34">34</span>
+<span id="35">35</span>
+<span id="36">36</span>
+<span id="37">37</span>
+<span id="38">38</span>
+<span id="39">39</span>
+<span id="40">40</span>
+<span id="41">41</span>
+<span id="42">42</span>
+<span id="43">43</span>
+<span id="44">44</span>
+<span id="45">45</span>
+<span id="46">46</span>
+<span id="47">47</span>
+<span id="48">48</span>
 </pre><pre class="rust">
 <span class="doccomment">//! Helper Functions</span>
 <span class="kw">use</span> <span class="ident">std::env</span>;
 <span class="kw">use</span> <span class="ident">std::error::Error</span>;
 <span class="kw">use</span> <span class="ident">std::fs::File</span>;
 <span class="kw">use</span> <span class="ident">std::io::Read</span>;
+
+<span class="kw">use</span> <span class="ident">rand::Rng</span>;
 
 <span class="doccomment">/// Read CSV file and return split content under a Rust Vec</span>
 <span class="doccomment">///</span>
@@ -63,6 +80,19 @@
             .<span class="ident">parse</span>::<span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>()
             .<span class="ident">expect</span>(<span class="string">&quot;Couldn&#39;t parse RETRY_SECONDS env var&quot;</span>),
         <span class="prelude-val">Err</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">DEFAULT_RETRY_SECONDS</span>,
+    }
+}
+
+<span class="doccomment">/// The probability of a request to being successful</span>
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">SUCCESFUL_RATE</span>: <span class="ident">f64</span> <span class="op">=</span> <span class="number">0.8</span>;
+
+<span class="doccomment">/// Throws a coin and returns a Result</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// This is a great typo. It stays</span>
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">toin_coss</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">str</span><span class="op">&gt;</span> {
+    <span class="kw">match</span> <span class="ident">rand::thread_rng</span>().<span class="ident">gen_bool</span>(<span class="ident">SUCCESFUL_RATE</span>) {
+        <span class="bool-val">true</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(()),
+        <span class="bool-val">false</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Err</span>(<span class="string">&quot;Miles Prower&quot;</span>),
     }
 }
 </pre></div>
